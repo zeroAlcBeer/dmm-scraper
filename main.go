@@ -26,26 +26,26 @@ func init() {
 }
 
 func main() {
-	s := &scraper.DMMScraper{}
+	s := &scraper.MGStageScraper{}
 	s.HTTPClient = proxyClient
-	err := s.FetchDoc("saba-436")
+	err := s.FetchDoc("230ORE-095")
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(s.GetPlot())
-	fmt.Println(s.GetTitle())
-	fmt.Println(s.GetDirector())
-	fmt.Println(s.GetRuntime())
-	fmt.Println(s.GetTags())
-	fmt.Println(s.GetStudio())
-	fmt.Println(s.GetMaker())
-	fmt.Println(s.GetOutline())
-	fmt.Println(s.GetActors())
-	fmt.Println(s.GetLabel())
-	fmt.Println(s.GetNumber())
-	fmt.Println(s.GetCover())
-	fmt.Println(s.GetWebsite())
-	fmt.Println(s.GetPremiered())
-	fmt.Println(s.GetSeries())
+	//fmt.Println(s.GetTitle())
+	//fmt.Println(s.GetDirector())
+	//fmt.Println(s.GetRuntime())
+	//fmt.Println(s.GetTags())
+	//fmt.Println(s.GetStudio())
+	//fmt.Println(s.GetMaker())
+	//fmt.Println(s.GetOutline())
+	//fmt.Println(s.GetActors())
+	//fmt.Println(s.GetLabel())
+	//fmt.Println(s.GetNumber())
+	//fmt.Println(s.GetCover())
+	//fmt.Println(s.GetWebsite())
+	//fmt.Println(s.GetPremiered())
+	//fmt.Println(s.GetSeries())
 
 }
