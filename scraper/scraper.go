@@ -10,9 +10,8 @@ type Scraper interface {
 	GetDirector() string
 	GetRuntime() string
 	GetTags() []string
-	GetStudio() string
 	GetMaker() string
-	GetOutline() string
+	//GetOutline() string
 	GetActors() []string
 	GetLabel() string
 	GetNumber() string
