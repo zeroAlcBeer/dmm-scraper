@@ -1,8 +1,11 @@
 package scraper
 
+import "net/http"
+
 type Scraper interface {
 	// Remote
 	FetchDoc(num string) error
+	SetHTTPClient(client *http.Client)
 
 	// Local
 	GetPlot() string

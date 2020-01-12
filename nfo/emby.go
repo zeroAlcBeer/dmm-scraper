@@ -3,6 +3,7 @@ package nfo
 import (
 	"better-av-tool/scraper"
 	"encoding/xml"
+	"strings"
 )
 
 type EmbyMovie struct {
@@ -21,8 +22,7 @@ type EmbyMovie struct {
 	Tag     []string         `xml:"tag"`
 	Actor   []EmbyMovieActor `xml:"actor"`
 	Poster  string           `xml:"poster"`
-	Thumb   string           `xml:"thumb"`
-	FanArt  string           `xml:"fanart"`
+	Fanart  []EmbyMovieThumb `xml:"fanart"`
 	Label   string           `xml:"label"`
 	Num     string           `xml:"num"`
 	Cover   string           `xml:"cover"`
@@ -34,7 +34,12 @@ type EmbyMovieActor struct {
 	Name string `xml:"name"`
 }
 
-func Build(s scraper.Scraper) ([]byte, error) {
+type EmbyMovieThumb struct {
+	Text  string `xml:",chardata"`
+	Thumb string `xml:"thumb"`
+}
+
+func Build(s scraper.Scraper, num string) ([]byte, error) {
 	//releaseTime, err := time.Parse("2006/01/02", )
 	//if err != nil {
 	//	return
@@ -43,12 +48,13 @@ func Build(s scraper.Scraper) ([]byte, error) {
 	for _, name := range s.GetActors() {
 		actors = append(actors, EmbyMovieActor{Name: name})
 	}
+
 	m := &EmbyMovie{
 		Plot:      s.GetPlot(),
 		Title:     s.GetTitle(),
 		Director:  s.GetDirector(),
 		Year:      s.GetPremiered()[:4],
-		Premiered: s.GetPremiered(),
+		Premiered: strings.Replace(s.GetPremiered(), "/", "-", -1),
 		Runtime:   s.GetRuntime(),
 		Genre:     append(s.GetTags(), s.GetSeries(), s.GetLabel()),
 		Tag:       append(s.GetTags(), s.GetSeries(), s.GetLabel()),
@@ -58,6 +64,8 @@ func Build(s scraper.Scraper) ([]byte, error) {
 		Cover:     s.GetCover(),
 		Num:       s.GetNumber(),
 		Website:   s.GetWebsite(),
+		Fanart:    []EmbyMovieThumb{{Thumb: num + ".jpg"}},
+		Poster:    num + ".png",
 	}
 	x, err := xml.MarshalIndent(m, "", "  ")
 	if err != nil {

@@ -20,6 +20,10 @@ type MGStageScraper struct {
 	HTTPClient *http.Client
 }
 
+func (s *MGStageScraper) SetHTTPClient(client *http.Client){
+	s.HTTPClient = client
+}
+
 func (s *MGStageScraper) FetchDoc(num string) error {
 	if s.HTTPClient == nil {
 		s.HTTPClient = &http.Client{

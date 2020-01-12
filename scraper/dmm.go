@@ -18,6 +18,10 @@ type DMMScraper struct {
 	HTTPClient *http.Client
 }
 
+func (s *DMMScraper) SetHTTPClient(client *http.Client) {
+	s.HTTPClient = client
+}
+
 func (s *DMMScraper) FetchDoc(num string) error {
 	if s.HTTPClient == nil {
 		s.HTTPClient = &http.Client{
@@ -32,7 +36,7 @@ func (s *DMMScraper) FetchDoc(num string) error {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		return errors.New(fmt.Sprintf("status code error: %s %s", res.StatusCode, res.Status))
+		return errors.New(fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status))
 	}
 
 	listDoc, err := goquery.NewDocumentFromReader(res.Body)
@@ -46,17 +50,25 @@ func (s *DMMScraper) FetchDoc(num string) error {
 	if itemCount == 0 {
 		return errors.New("record not found")
 	}
-	if itemCount > 2 {
-		return errors.New("multi records, make number specific")
+	var hrefs []string
+	listDoc.Find("#list li").Each(func(i int, s *goquery.Selection) {
+		href, _ := s.Find(".tmb a").Attr("href")
+		if strings.Contains(href, strings.Replace(strings.ToLower(num), "-", "", 1)) {
+			hrefs = append(hrefs, href)
+		}
+	})
+
+	if len(hrefs) == 0 {
+		return errors.New("fail to make number specific")
 	}
 
-	// 排除 特典\特卖
-	firstUrl, _ := listDoc.Find("#list li").First().Find(".tmb a").Attr("href")
-	lastUrl, _ := listDoc.Find("#list li").Last().Find(".tmb a").Attr("href")
-	if len(firstUrl) < len(lastUrl) {
-		s.docUrl = firstUrl
-	} else {
-		s.docUrl = lastUrl
+	s.docUrl = hrefs[0]
+	if len(hrefs) > 1 {
+		for _, href := range hrefs[1:] {
+			if len(href) < len(s.docUrl) {
+				s.docUrl = href
+			}
+		}
 	}
 
 	resDetail, err := s.HTTPClient.Get(s.docUrl)
@@ -65,7 +77,7 @@ func (s *DMMScraper) FetchDoc(num string) error {
 	}
 	defer resDetail.Body.Close()
 	if resDetail.StatusCode != 200 {
-		return errors.New(fmt.Sprintf("status code error: %s %s", resDetail.StatusCode, resDetail.Status))
+		return errors.New(fmt.Sprintf("status code error: %d %s", resDetail.StatusCode, resDetail.Status))
 	}
 
 	s.doc, err = goquery.NewDocumentFromReader(resDetail.Body)
@@ -179,6 +191,9 @@ func getDmmTableValue(key string, doc *goquery.Document) (val string) {
 				val = s.Find("td a").Text()
 				if val == "" {
 					val = s.Find("td").Last().Text()
+				}
+				if val == "----" {
+					val = ""
 				}
 				return false
 			}
