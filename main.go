@@ -38,7 +38,7 @@ var (
 func init() {
 	flag.StringVar(&scanPath, "path", "", "set scan path")
 	flag.StringVar(&outputPath, "output", "", "set output path")
-	flag.StringVar(&proxyUrl, "url", "", "set proxy url")
+	flag.StringVar(&proxyUrl, "proxy", "", "set proxy url")
 	flag.Parse()
 
 }
@@ -82,56 +82,62 @@ func main() {
 		if err != nil {
 			return err
 		}
+		if info.IsDir() {
+			return nil
+		}
+		if !IsValidVideo(filepath.Ext(pathX)) {
+			return nil
+		}
 
-		//find out if it's a dir or file, if file, print info
-		if !info.IsDir() {
-			var num string
-			var s scraper.Scraper
+		var num string
+		var s scraper.Scraper
 
-
-			typeMGStage, _ := regexp.Compile(`[0-9]{3,4}[a-zA-Z]{2,5}-[0-9]{3,4}`)
-			typeDefault, _ := regexp.Compile(`[a-zA-Z]{2,5}-[0-9]{3,4}`)
-			if typeMGStage.MatchString(info.Name()) {
-				num = typeMGStage.FindString(info.Name())
-				s = &scraper.MGStageScraper{}
-			} else {
-				num = typeDefault.FindString(info.Name())
-				s = &scraper.DMMScraper{}
+		typeFc2, _ := regexp.Compile(`(fc2|FC2)-[0-9]{6,7}`)
+		typeMGStage, _ := regexp.Compile(`(siro|SIRO|[0-9]{3,4}[a-zA-Z]{2,5})-[0-9]{3,4}`)
+		typeDefault, _ := regexp.Compile(`[a-zA-Z]{2,5}-[0-9]{3,4}`)
+		if typeFc2.MatchString(info.Name()) {
+			num = typeFc2.FindString(info.Name())
+			s = &scraper.Fc2Scraper{}
+		} else if typeMGStage.MatchString(info.Name()) {
+			num = typeMGStage.FindString(info.Name())
+			s = &scraper.MGStageScraper{}
+		} else {
+			num = typeDefault.FindString(info.Name())
+			s = &scraper.DMMScraper{}
+		}
+		if num != "" {
+			num = strings.ToUpper(num)
+			log.Infof("num %s match!", num)
+			b, err := GetNfo(s, num)
+			if err != nil {
+				log.Error(err)
+				return nil
 			}
-			if num != "" {
-				num = strings.ToUpper(num)
-				log.Infof("num %s match!", num)
-				b, err := GetNfo(s, num)
-				if err != nil {
-					log.Error(err)
-					return nil
-				}
-				nfoName := path.Join(outputPath, s.GetPremiered()[:4], fmt.Sprintf("%s.nfo", num))
-				jpgName := path.Join(outputPath, s.GetPremiered()[:4], fmt.Sprintf("%s.jpg", num))
-				err = ensureDir(filepath.Dir(nfoName))
-				if err != nil {
-					log.Error(err)
-					return nil
-				}
-				err = ioutil.WriteFile(nfoName, b, 0644)
-				if err != nil {
-					log.Error(err)
-					return nil
-				}
-				log.Infof("%s built!", nfoName)
-				item := DownloadItem{
-					Name: jpgName,
-					Url:  s.GetCover(),
-				}
-				if _, err := os.Stat(item.Name); os.IsNotExist(err) {
-					items = append(items, item)
-				}
+			nfoName := path.Join(outputPath, s.GetPremiered()[:4], fmt.Sprintf("%s.nfo", num))
+			jpgName := path.Join(outputPath, s.GetPremiered()[:4], fmt.Sprintf("%s.jpg", num))
+			err = ensureDir(filepath.Dir(nfoName))
+			if err != nil {
+				log.Error(err)
+				return nil
+			}
+			err = ioutil.WriteFile(nfoName, b, 0644)
+			if err != nil {
+				log.Error(err)
+				return nil
+			}
+			log.Infof("%s built!", nfoName)
+			item := DownloadItem{
+				Name: jpgName,
+				Url:  s.GetCover(),
+			}
+			if _, err := os.Stat(item.Name); os.IsNotExist(err) {
+				items = append(items, item)
+			}
 
-				newPath := strings.ToUpper(num) + filepath.Ext(pathX)
-				err = os.Rename(pathX, path.Join(outputPath, s.GetPremiered()[:4], newPath))
-				if err != nil {
-					return err
-				}
+			newPath := strings.ToUpper(num) + filepath.Ext(pathX)
+			err = os.Rename(pathX, path.Join(outputPath, s.GetPremiered()[:4], newPath))
+			if err != nil {
+				return err
 			}
 		}
 
@@ -158,6 +164,7 @@ type DownloadItem struct {
 }
 
 func DownloadFiles(items []DownloadItem) {
+	log.Infof("Downloading %d files...", len(items))
 	// create grabClient
 	grabClient := grab.NewClient()
 	grabClient.HTTPClient = proxyClient
@@ -165,10 +172,11 @@ func DownloadFiles(items []DownloadItem) {
 
 	reqs := make([]*grab.Request, 0)
 	for _, item := range items {
+		log.Infof("Downloading from %s", item.Url)
+
 		req, _ := grab.NewRequest(item.Name, item.Url)
 		reqs = append(reqs, req)
 	}
-	log.Infof("Downloading %d files...", len(reqs))
 	respCh := grabClient.DoBatch(8, reqs...)
 
 	var success int
@@ -239,4 +247,20 @@ func ensureDir(dirName string) error {
 	} else {
 		return err
 	}
+}
+
+func IsValidVideo(ext string) bool {
+	switch ext {
+	case
+		".wmv",
+		".WMV",
+		".mp4",
+		".MP4",
+		".avi",
+		".AVI",
+		".mkv",
+		".MKV":
+		return true
+	}
+	return false
 }

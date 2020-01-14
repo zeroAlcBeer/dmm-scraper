@@ -39,15 +39,17 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
+type fields struct {
+	doc        *goquery.Document
+	docUrl     string
+	HTTPClient *http.Client
+}
+
+type args struct {
+	num string
+}
+
 func TestFc2Scraper_FetchDoc(t *testing.T) {
-	type fields struct {
-		doc        *goquery.Document
-		docUrl     string
-		HTTPClient *http.Client
-	}
-	type args struct {
-		num string
-	}
 	tests := []struct {
 		name    string
 		fields  fields
@@ -61,6 +63,13 @@ func TestFc2Scraper_FetchDoc(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "fetchDoc expects no error",
+			args: args{
+				num: "559226",
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -68,7 +77,7 @@ func TestFc2Scraper_FetchDoc(t *testing.T) {
 				fc2Tests[tt.args.num] = &Fc2Scraper{
 					doc:        tt.fields.doc,
 					docUrl:     tt.fields.docUrl,
-					HTTPClient: tt.fields.HTTPClient,
+					HTTPClient: proxyClient,
 				}
 			}
 			if err := fc2Tests[tt.args.num].FetchDoc(tt.args.num); (err != nil) != tt.wantErr {
@@ -79,9 +88,6 @@ func TestFc2Scraper_FetchDoc(t *testing.T) {
 }
 
 func TestFc2Scraper_GetTitle(t *testing.T) {
-	type args struct {
-		num string
-	}
 	tests := []struct {
 		name string
 		args args
@@ -94,6 +100,13 @@ func TestFc2Scraper_GetTitle(t *testing.T) {
 			},
 			want: "【某大手受付嬢】超絶イイ女！田中み○実似！Fカップありさちゃん（22才）と仕事終わりにそのままスーツでエッチww",
 		},
+		{
+			name: "forceFetch expects no error",
+			args: args{
+				num: "559226",
+			},
+			want: "１８歳Jカップグラドル超人気美爆乳美女再度降臨。ハプニングありの期間枚数限定。後編",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -105,9 +118,6 @@ func TestFc2Scraper_GetTitle(t *testing.T) {
 }
 
 func TestFc2Scraper_GetDirector(t *testing.T) {
-	type args struct {
-		num string
-	}
 	tests := []struct {
 		name string
 		args args
@@ -119,6 +129,13 @@ func TestFc2Scraper_GetDirector(t *testing.T) {
 				num: "1027251",
 			},
 			want: "ビッチとオレたち",
+		},
+		{
+			name: "forceFetch expects no error",
+			args: args{
+				num: "559226",
+			},
+			want: "素人好きな親父ナンパ師",
 		},
 	}
 	for _, tt := range tests {

@@ -3,9 +3,12 @@ package scraper
 import (
 	"errors"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
 	"net/http"
 	"strings"
+
+	"github.com/PuerkitoBio/goquery"
+
+	"better-av-tool/log"
 )
 
 const (
@@ -30,6 +33,7 @@ func (s *DMMScraper) FetchDoc(num string) error {
 			},
 		}
 	}
+	log.Infof("fetching %s", fmt.Sprintf(dmmSearchUrl, num))
 	res, err := s.HTTPClient.Get(fmt.Sprintf(dmmSearchUrl, num))
 	if err != nil {
 		return err
@@ -70,7 +74,7 @@ func (s *DMMScraper) FetchDoc(num string) error {
 			}
 		}
 	}
-
+	log.Infof("fetching %s", s.docUrl)
 	resDetail, err := s.HTTPClient.Get(s.docUrl)
 	if err != nil {
 		return err
@@ -88,7 +92,8 @@ func (s *DMMScraper) GetPlot() string {
 	if s.doc == nil {
 		return ""
 	}
-	return strings.TrimSpace(s.doc.Find("p[class=mg-b20]").Children().Remove().End().Text())
+	tempDoc := s.doc.Find("p[class=mg-b20]")
+	return strings.TrimSpace(tempDoc.Children().Remove().End().Text())
 }
 
 func (s *DMMScraper) GetTitle() string {

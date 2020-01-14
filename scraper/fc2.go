@@ -1,10 +1,13 @@
 package scraper
 
 import (
+	"better-av-tool/archive"
+	"better-av-tool/log"
 	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
+	"regexp"
 	"strings"
 )
 
@@ -12,6 +15,7 @@ type Fc2Scraper struct {
 	doc        *goquery.Document
 	docUrl     string
 	HTTPClient *http.Client
+	isArchive  bool
 }
 
 const (
@@ -26,6 +30,10 @@ func (s *Fc2Scraper) FetchDoc(num string) error {
 			},
 		}
 	}
+
+	typeFc2, _ := regexp.Compile(`[0-9]{6,7}`)
+	num = typeFc2.FindString(num)
+
 	if s.docUrl == "" {
 		s.docUrl = fmt.Sprintf(fc2Url, num)
 	}
@@ -34,8 +42,23 @@ func (s *Fc2Scraper) FetchDoc(num string) error {
 		return err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != 200 {
+	if res.StatusCode != 200 && res.StatusCode != 410 {
 		return errors.New(fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status))
+	}
+
+	if res.StatusCode == 410 {
+		s.docUrl, err = archive.GetAvailableUrl(s.docUrl, s.HTTPClient)
+		if err != nil {
+			return err
+		}
+		res, err = s.HTTPClient.Get(s.docUrl)
+		if err != nil {
+			return err
+		}
+		if res.StatusCode != 200 {
+			return errors.New(fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status))
+		}
+		s.isArchive = true
 	}
 
 	s.doc, err = goquery.NewDocumentFromReader(res.Body)
@@ -50,7 +73,8 @@ func (s *Fc2Scraper) GetPlot() string {
 	if s.doc == nil {
 		return ""
 	}
-	explain := s.doc.Find("section[class=explain] p").Children().Remove().End().Text()
+	tempDoc := s.doc.Find("section[class=explain] p").Clone()
+	explain := tempDoc.Children().Remove().End().Text()
 	return strings.TrimSpace(explain)
 }
 
@@ -121,6 +145,10 @@ func (s *Fc2Scraper) GetCover() string {
 		return ""
 	}
 	img, _ := s.doc.Find("section[class=explain] img").First().Attr("src")
+	if s.isArchive {
+		img = img[strings.Index(img, "https://"):]
+		log.Info(img)
+	}
 	return img
 }
 

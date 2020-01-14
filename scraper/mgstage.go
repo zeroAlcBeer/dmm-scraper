@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+
+	"better-av-tool/log"
 )
 
 const (
@@ -20,7 +22,7 @@ type MGStageScraper struct {
 	HTTPClient *http.Client
 }
 
-func (s *MGStageScraper) SetHTTPClient(client *http.Client){
+func (s *MGStageScraper) SetHTTPClient(client *http.Client) {
 	s.HTTPClient = client
 }
 
@@ -38,6 +40,7 @@ func (s *MGStageScraper) FetchDoc(num string) error {
 
 	s.docUrl = fmt.Sprintf(mgstageDetailUrl, strings.ToUpper(num))
 
+	log.Infof("fetching %s", s.docUrl)
 	req, err := http.NewRequest("GET", s.docUrl, nil)
 	if err != nil {
 		return err
