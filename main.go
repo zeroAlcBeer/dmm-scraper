@@ -94,17 +94,25 @@ func main() {
 
 		typeFc2, _ := regexp.Compile(`(fc2|FC2)-[0-9]{6,7}`)
 		typeMGStage, _ := regexp.Compile(`(siro|SIRO|[0-9]{3,4}[a-zA-Z]{2,5})-[0-9]{3,4}`)
+		typeDmm, _ := regexp.Compile(`[a-zA-Z]{2,5}00[0-9]{3,4}`)
 		typeDefault, _ := regexp.Compile(`[a-zA-Z]{2,5}-[0-9]{3,4}`)
-		if typeFc2.MatchString(info.Name()) {
+
+		switch {
+		case typeFc2.MatchString(info.Name()):
 			num = typeFc2.FindString(info.Name())
 			s = &scraper.Fc2Scraper{}
-		} else if typeMGStage.MatchString(info.Name()) {
+		case typeMGStage.MatchString(info.Name()):
 			num = typeMGStage.FindString(info.Name())
 			s = &scraper.MGStageScraper{}
-		} else {
+		case typeDmm.MatchString(info.Name()):
+			num = typeDmm.FindString(info.Name())
+			num = strings.Replace(num, "00", "-", 1)
+			s = &scraper.DMMScraper{}
+		default:
 			num = typeDefault.FindString(info.Name())
 			s = &scraper.DMMScraper{}
 		}
+
 		if num != "" {
 			num = strings.ToUpper(num)
 			log.Infof("num %s match!", num)

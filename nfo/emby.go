@@ -51,7 +51,7 @@ func Build(s scraper.Scraper, num string) ([]byte, error) {
 
 	m := &EmbyMovie{
 		Plot:      s.GetPlot(),
-		Title:     s.GetTitle(),
+		Title:     num + " " + s.GetTitle(),
 		Director:  s.GetDirector(),
 		Year:      s.GetPremiered()[:4],
 		Premiered: strings.Replace(s.GetPremiered(), "/", "-", -1),
