@@ -146,7 +146,7 @@ func (s *Fc2Scraper) GetCover() string {
 	}
 	img, _ := s.doc.Find("section[class=explain] img").First().Attr("src")
 	if s.isArchive {
-		img = img[strings.Index(img, "https://"):]
+		img = img[strings.LastIndex(img, "http"):]
 		log.Info(img)
 	}
 	return img
