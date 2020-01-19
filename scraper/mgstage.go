@@ -164,6 +164,10 @@ func (s *MGStageScraper) GetSeries() string {
 	return strings.TrimSpace(getMgstageTableValue("シリーズ", s.doc).Find("td").Text())
 }
 
+func (s *MGStageScraper) NeedCut() bool {
+	return false
+}
+
 func getMgstageTableValue(key string, doc *goquery.Document) (target *goquery.Selection) {
 	doc.Find("div[class=detail_data] table").Last().Find("tr").EachWithBreak(
 		func(i int, s *goquery.Selection) bool {

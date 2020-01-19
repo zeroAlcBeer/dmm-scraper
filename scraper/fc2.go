@@ -171,3 +171,7 @@ func (s *Fc2Scraper) GetPremiered() (rel string) {
 func (s *Fc2Scraper) GetSeries() string {
 	return ""
 }
+
+func (s *Fc2Scraper) NeedCut() bool {
+	return false
+}

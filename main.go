@@ -77,7 +77,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	items := make([]DownloadItem, 0)
 	var ff = func(pathX string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -92,12 +91,16 @@ func main() {
 		var num string
 		var s scraper.Scraper
 
-		typeFc2, _ := regexp.Compile(`(fc2|FC2)-[0-9]{6,7}`)
+		typeHeyzo, _ := regexp.Compile(`(heyzo|HEYZO)-[0-9]{4}`)
+		typeFc2, _ := regexp.Compile(`(fc2|FC2|ppv|PPV)-[0-9]{6,7}`)
 		typeMGStage, _ := regexp.Compile(`(siro|SIRO|[0-9]{3,4}[a-zA-Z]{2,5})-[0-9]{3,4}`)
 		typeDmm, _ := regexp.Compile(`[a-zA-Z]{2,5}00[0-9]{3,4}`)
 		typeDefault, _ := regexp.Compile(`[a-zA-Z]{2,5}-[0-9]{3,4}`)
 
 		switch {
+		case typeHeyzo.MatchString(info.Name()):
+			num = typeHeyzo.FindString(info.Name())
+			s = &scraper.HeyzoScraper{}
 		case typeFc2.MatchString(info.Name()):
 			num = typeFc2.FindString(info.Name())
 			s = &scraper.Fc2Scraper{}
@@ -135,11 +138,12 @@ func main() {
 			}
 			log.Infof("%s built!", nfoName)
 			item := DownloadItem{
-				Name: jpgName,
-				Url:  s.GetCover(),
+				Name:    jpgName,
+				Url:     s.GetCover(),
+				NeedCut: s.NeedCut(),
 			}
 			if _, err := os.Stat(item.Name); os.IsNotExist(err) {
-				items = append(items, item)
+				go download(item)
 			}
 
 			newPath := strings.ToUpper(num) + filepath.Ext(pathX)
@@ -153,8 +157,6 @@ func main() {
 	}
 
 	_ = filepath.Walk(scanPath, ff)
-	DownloadFiles(items)
-
 }
 
 func GetNfo(s scraper.Scraper, num string) ([]byte, error) {
@@ -167,43 +169,30 @@ func GetNfo(s scraper.Scraper, num string) ([]byte, error) {
 }
 
 type DownloadItem struct {
-	Name string
-	Url  string
+	Name    string
+	Url     string
+	NeedCut bool
 }
 
-func DownloadFiles(items []DownloadItem) {
-	log.Infof("Downloading %d files...", len(items))
-	// create grabClient
-	grabClient := grab.NewClient()
-	grabClient.HTTPClient = proxyClient
-	grabClient.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36"
+func download(item DownloadItem) {
+	log.Infof("Downloading from %s", item.Url)
 
-	reqs := make([]*grab.Request, 0)
-	for _, item := range items {
-		log.Infof("Downloading from %s", item.Url)
+	req, _ := grab.NewRequest(item.Name, item.Url)
+	resp := grabClient.Do(req)
 
-		req, _ := grab.NewRequest(item.Name, item.Url)
-		reqs = append(reqs, req)
+	if err := resp.Err(); err != nil {
+		log.Errorf("%s: %v", resp.Filename, err)
 	}
-	respCh := grabClient.DoBatch(8, reqs...)
 
-	var success int
-	for resp := range respCh {
-		if err := resp.Err(); err != nil {
-			log.Errorf("%s: %v", resp.Filename, err)
-		}
-
-		if resp.IsComplete() {
-			success++
-			_ = CropCover(resp.Filename, strings.Replace(resp.Filename, "jpg", "png", 1))
-			log.Infof("Finished %s %d / %d bytes (%d%%)", resp.Filename, resp.BytesComplete(), resp.Size, int(100*resp.Progress()))
-		}
+	if resp.IsComplete() {
+		pngName := strings.ReplaceAll(resp.Filename, "jpg", "png")
+		_ = cropOrCopy(resp.Filename, pngName, item.NeedCut)
+		log.Infof("Finished %s %d / %d bytes (%d%%)", resp.Filename, resp.BytesComplete(), resp.Size, int(100*resp.Progress()))
 	}
-	log.Infof("%d files successfully downloaded.", success)
 	return
 }
 
-func CropCover(jpgName, pngName string) error {
+func cropOrCopy(jpgName, pngName string, needCut bool) error {
 	f, err := os.Open(jpgName)
 	if err != nil {
 		log.Error("Cannot open file", err)
@@ -217,7 +206,7 @@ func CropCover(jpgName, pngName string) error {
 	}
 	srcW := img.Bounds().Dx()
 	srcH := img.Bounds().Dy()
-	if srcW == 800 {
+	if needCut {
 		img, err = cutter.Crop(img, cutter.Config{
 			Height:  srcH,                       // height in pixel or Y ratio(see Ratio Option below)
 			Width:   378,                        // width in pixel or X ratio

@@ -14,7 +14,6 @@ type Scraper interface {
 	GetRuntime() string
 	GetTags() []string
 	GetMaker() string
-	//GetOutline() string
 	GetActors() []string
 	GetLabel() string
 	GetNumber() string
@@ -22,4 +21,6 @@ type Scraper interface {
 	GetWebsite() string
 	GetPremiered() string
 	GetSeries() string
+
+	NeedCut() bool
 }

@@ -188,6 +188,9 @@ func (s *DMMScraper) GetSeries() string {
 	return getDmmTableValue("シリーズ", s.doc)
 }
 
+func (s *DMMScraper) NeedCut() bool {
+	return true
+}
 //
 func getDmmTableValue(key string, doc *goquery.Document) (val string) {
 	doc.Find("table[class=mg-b20] tr").EachWithBreak(
