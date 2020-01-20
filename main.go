@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/cavaliercoder/grab"
 	"github.com/oliamb/cutter"
@@ -33,6 +34,7 @@ var (
 
 	proxyClient *http.Client
 	grabClient  *grab.Client
+	wg          sync.WaitGroup
 )
 
 func init() {
@@ -124,8 +126,13 @@ func main() {
 				log.Error(err)
 				return nil
 			}
-			nfoName := path.Join(outputPath, s.GetPremiered()[:4], fmt.Sprintf("%s.nfo", num))
-			jpgName := path.Join(outputPath, s.GetPremiered()[:4], fmt.Sprintf("%s.jpg", num))
+			var nfoName string
+			if s.GetPremiered() != ""{
+				nfoName = path.Join(outputPath, s.GetPremiered()[:4], fmt.Sprintf("%s.nfo", num))
+			}else{
+				nfoName = path.Join(outputPath, s.GetPremiered(), fmt.Sprintf("%s.nfo", num))
+			}
+			//jpgName := path.Join(outputPath, s.GetPremiered()[:4], fmt.Sprintf("%s.jpg", num))
 			err = ensureDir(filepath.Dir(nfoName))
 			if err != nil {
 				log.Error(err)
@@ -137,17 +144,22 @@ func main() {
 				return nil
 			}
 			log.Infof("%s built!", nfoName)
-			item := DownloadItem{
-				Name:    jpgName,
-				Url:     s.GetCover(),
-				NeedCut: s.NeedCut(),
-			}
-			if _, err := os.Stat(item.Name); os.IsNotExist(err) {
-				go download(item)
-			}
+			//item := DownloadItem{
+			//	Name:    jpgName,
+			//	Url:     s.GetCover(),
+			//	NeedCut: s.NeedCut(),
+			//}
+			//if _, err := os.Stat(item.Name); os.IsNotExist(err) {
+			//	wg.Add(1)
+			//	go download(item)
+			//}
 
 			newPath := strings.ToUpper(num) + filepath.Ext(pathX)
-			err = os.Rename(pathX, path.Join(outputPath, s.GetPremiered()[:4], newPath))
+			if s.GetPremiered() != ""{
+				err = os.Rename(pathX, path.Join(outputPath, s.GetPremiered()[:4], newPath))
+			}else{
+				err = os.Rename(pathX, path.Join(outputPath, newPath))
+			}
 			if err != nil {
 				return err
 			}
@@ -157,6 +169,7 @@ func main() {
 	}
 
 	_ = filepath.Walk(scanPath, ff)
+	wg.Wait()
 }
 
 func GetNfo(s scraper.Scraper, num string) ([]byte, error) {
@@ -188,6 +201,7 @@ func download(item DownloadItem) {
 		pngName := strings.ReplaceAll(resp.Filename, "jpg", "png")
 		_ = cropOrCopy(resp.Filename, pngName, item.NeedCut)
 		log.Infof("Finished %s %d / %d bytes (%d%%)", resp.Filename, resp.BytesComplete(), resp.Size, int(100*resp.Progress()))
+		wg.Done()
 	}
 	return
 }
