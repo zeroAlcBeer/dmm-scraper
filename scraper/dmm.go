@@ -19,10 +19,15 @@ type DMMScraper struct {
 	doc        *goquery.Document
 	docUrl     string
 	HTTPClient *http.Client
+	isArchive  bool
 }
 
 func (s *DMMScraper) SetHTTPClient(client *http.Client) {
 	s.HTTPClient = client
+}
+
+func (s *DMMScraper) SetDocUrl(url string) {
+	s.docUrl = url
 }
 
 func (s *DMMScraper) FetchDoc(num string) error {
@@ -33,47 +38,53 @@ func (s *DMMScraper) FetchDoc(num string) error {
 			},
 		}
 	}
-	log.Infof("fetching %s", fmt.Sprintf(dmmSearchUrl, num))
-	res, err := s.HTTPClient.Get(fmt.Sprintf(dmmSearchUrl, num))
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return errors.New(fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status))
-	}
 
-	listDoc, err := goquery.NewDocumentFromReader(res.Body)
-
-	if err != nil {
-		return err
-	}
-
-	// Find the ul id=list items
-	itemCount := listDoc.Find("#list li").Length()
-	if itemCount == 0 {
-		return errors.New("record not found")
-	}
-	var hrefs []string
-	listDoc.Find("#list li").Each(func(i int, s *goquery.Selection) {
-		href, _ := s.Find(".tmb a").Attr("href")
-		if strings.Contains(href, strings.Replace(strings.ToLower(num), "-", "", 1)) {
-			hrefs = append(hrefs, href)
+	if s.docUrl == "" {
+		log.Infof("fetching %s", fmt.Sprintf(dmmSearchUrl, num))
+		res, err := s.HTTPClient.Get(fmt.Sprintf(dmmSearchUrl, num))
+		if err != nil {
+			return err
 		}
-	})
+		defer res.Body.Close()
+		if res.StatusCode != 200 {
+			return errors.New(fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status))
+		}
 
-	if len(hrefs) == 0 {
-		return errors.New("fail to make number specific")
-	}
+		listDoc, err := goquery.NewDocumentFromReader(res.Body)
 
-	s.docUrl = hrefs[0]
-	if len(hrefs) > 1 {
-		for _, href := range hrefs[1:] {
-			if len(href) < len(s.docUrl) {
-				s.docUrl = href
+		if err != nil {
+			return err
+		}
+
+		// Find the ul id=list items
+		itemCount := listDoc.Find("#list li").Length()
+		if itemCount == 0 {
+			return errors.New("record not found")
+		}
+		var hrefs []string
+		listDoc.Find("#list li").Each(func(i int, s *goquery.Selection) {
+			href, _ := s.Find(".tmb a").Attr("href")
+			if strings.Contains(href, strings.Replace(strings.ToLower(num), "-", "", 1)) {
+				hrefs = append(hrefs, href)
+			}
+		})
+
+		if len(hrefs) == 0 {
+			return errors.New("fail to make number specific")
+		}
+
+		s.docUrl = hrefs[0]
+		if len(hrefs) > 1 {
+			for _, href := range hrefs[1:] {
+				if len(href) < len(s.docUrl) {
+					s.docUrl = href
+				}
 			}
 		}
+	} else {
+		s.isArchive = true
 	}
+
 	log.Infof("fetching %s", s.docUrl)
 	resDetail, err := s.HTTPClient.Get(s.docUrl)
 	if err != nil {
@@ -166,8 +177,13 @@ func (s *DMMScraper) GetNumber() string {
 }
 
 func (s *DMMScraper) GetCover() string {
-	url, _ := s.doc.Find("#sample-video a").First().Attr("href")
-	return url
+	img, _ := s.doc.Find("#sample-video a").First().Attr("href")
+
+	if s.isArchive {
+		img = img[strings.LastIndex(img, "http"):]
+		log.Info(img)
+	}
+	return img
 }
 
 func (s *DMMScraper) GetWebsite() string {
@@ -191,6 +207,7 @@ func (s *DMMScraper) GetSeries() string {
 func (s *DMMScraper) NeedCut() bool {
 	return true
 }
+
 //
 func getDmmTableValue(key string, doc *goquery.Document) (val string) {
 	doc.Find("table[class=mg-b20] tr").EachWithBreak(

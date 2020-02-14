@@ -132,7 +132,7 @@ func main() {
 			}else{
 				nfoName = path.Join(outputPath, s.GetPremiered(), fmt.Sprintf("%s.nfo", num))
 			}
-			//jpgName := path.Join(outputPath, s.GetPremiered()[:4], fmt.Sprintf("%s.jpg", num))
+			jpgName := path.Join(outputPath, s.GetPremiered()[:4], fmt.Sprintf("%s.jpg", num))
 			err = ensureDir(filepath.Dir(nfoName))
 			if err != nil {
 				log.Error(err)
@@ -144,15 +144,15 @@ func main() {
 				return nil
 			}
 			log.Infof("%s built!", nfoName)
-			//item := DownloadItem{
-			//	Name:    jpgName,
-			//	Url:     s.GetCover(),
-			//	NeedCut: s.NeedCut(),
-			//}
-			//if _, err := os.Stat(item.Name); os.IsNotExist(err) {
-			//	wg.Add(1)
-			//	go download(item)
-			//}
+			item := DownloadItem{
+				Name:    jpgName,
+				Url:     s.GetCover(),
+				NeedCut: s.NeedCut(),
+			}
+			if _, err := os.Stat(item.Name); os.IsNotExist(err) {
+				wg.Add(1)
+				go download(item)
+			}
 
 			newPath := strings.ToUpper(num) + filepath.Ext(pathX)
 			if s.GetPremiered() != ""{

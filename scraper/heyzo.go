@@ -101,6 +101,10 @@ func (s *HeyzoScraper) SetHTTPClient(client *http.Client) {
 	s.HTTPClient = client
 }
 
+func (s *HeyzoScraper) SetDocUrl(url string) {
+	s.docUrl = url
+}
+
 func (s *HeyzoScraper) GetPlot() string {
 	if s.doc == nil {
 		return ""
