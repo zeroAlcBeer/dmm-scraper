@@ -6,6 +6,7 @@ type Scraper interface {
 	// Remote
 	FetchDoc(num string) error
 	SetHTTPClient(client *http.Client)
+	SetDocUrl(url string)
 
 	// Local
 	GetPlot() string

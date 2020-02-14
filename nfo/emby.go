@@ -53,7 +53,7 @@ func Build(s scraper.Scraper, num string) ([]byte, error) {
 		Plot:      s.GetPlot(),
 		Title:     num + " " + s.GetTitle(),
 		Director:  s.GetDirector(),
-		Year:      s.GetPremiered()[:4],
+		Year:      "",
 		Premiered: strings.Replace(s.GetPremiered(), "/", "-", -1),
 		Runtime:   s.GetRuntime(),
 		Genre:     append(s.GetTags(), s.GetSeries(), s.GetLabel()),
@@ -66,6 +66,10 @@ func Build(s scraper.Scraper, num string) ([]byte, error) {
 		Website:   s.GetWebsite(),
 		Fanart:    []EmbyMovieThumb{{Thumb: num + ".jpg"}},
 		Poster:    num + ".png",
+	}
+
+	if s.GetPremiered() != "" {
+		m.Year = s.GetPremiered()[:4]
 	}
 	x, err := xml.MarshalIndent(m, "", "  ")
 	if err != nil {

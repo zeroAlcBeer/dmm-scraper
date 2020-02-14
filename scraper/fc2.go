@@ -69,6 +69,10 @@ func (s *Fc2Scraper) SetHTTPClient(client *http.Client) {
 	s.HTTPClient = client
 }
 
+func (s *Fc2Scraper) SetDocUrl(url string) {
+	s.docUrl = url
+}
+
 func (s *Fc2Scraper) GetPlot() string {
 	if s.doc == nil {
 		return ""

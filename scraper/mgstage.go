@@ -26,6 +26,10 @@ func (s *MGStageScraper) SetHTTPClient(client *http.Client) {
 	s.HTTPClient = client
 }
 
+func (s *MGStageScraper) SetDocUrl(url string) {
+	s.docUrl = url
+}
+
 func (s *MGStageScraper) FetchDoc(num string) error {
 	if s.HTTPClient == nil {
 		s.HTTPClient = &http.Client{
