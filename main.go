@@ -8,6 +8,9 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"github.com/cavaliercoder/grab"
+	"github.com/oliamb/cutter"
+	"golang.org/x/net/proxy"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -20,29 +23,20 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
-
-	"github.com/cavaliercoder/grab"
-	"github.com/oliamb/cutter"
-	"golang.org/x/net/proxy"
 )
 
 var (
-	scanPath   string
+	basePath   = "output"
 	outputPath string
 	proxyUrl   string
 
 	proxyClient *http.Client
 	grabClient  *grab.Client
-	wg          sync.WaitGroup
 )
 
 func init() {
-	flag.StringVar(&scanPath, "path", "", "set scan path")
-	flag.StringVar(&outputPath, "output", "", "set output path")
 	flag.StringVar(&proxyUrl, "proxy", "", "set proxy url")
 	flag.Parse()
-
 }
 
 func main() {
@@ -72,107 +66,63 @@ func main() {
 
 	}
 
-	if outputPath == "" {
-		log.Fatal("output path empty")
-	}
-	if err := ensureDir(outputPath); err != nil {
+	if err := ensureDir("output"); err != nil {
 		log.Fatal(err)
 	}
 
-	var ff = func(pathX string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+	files, err := ioutil.ReadDir(".")
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, f := range files {
+		if f.IsDir() {
+			continue
 		}
-		if info.IsDir() {
-			return nil
-		}
-		if !IsValidVideo(filepath.Ext(pathX)) {
-			return nil
-		}
-
-		var num string
-		var s scraper.Scraper
-
-		typeHeyzo, _ := regexp.Compile(`(heyzo|HEYZO)-[0-9]{4}`)
-		typeFc2, _ := regexp.Compile(`(fc2|FC2|ppv|PPV)-[0-9]{6,7}`)
-		typeMGStage, _ := regexp.Compile(`(siro|SIRO|[0-9]{3,4}[a-zA-Z]{2,5})-[0-9]{3,4}`)
-		typeDmm, _ := regexp.Compile(`[a-zA-Z]{2,5}00[0-9]{3,4}`)
-		typeDefault, _ := regexp.Compile(`[a-zA-Z]{2,5}-[0-9]{3,4}`)
-
-		switch {
-		case typeHeyzo.MatchString(info.Name()):
-			num = typeHeyzo.FindString(info.Name())
-			s = &scraper.HeyzoScraper{}
-		case typeFc2.MatchString(info.Name()):
-			num = typeFc2.FindString(info.Name())
-			s = &scraper.Fc2Scraper{}
-		case typeMGStage.MatchString(info.Name()):
-			num = typeMGStage.FindString(info.Name())
-			s = &scraper.MGStageScraper{}
-		case typeDmm.MatchString(info.Name()):
-			num = typeDmm.FindString(info.Name())
-			num = strings.Replace(num, "00", "-", 1)
-			s = &scraper.DMMScraper{}
-		default:
-			num = typeDefault.FindString(info.Name())
-			s = &scraper.DMMScraper{}
+		if !IsValidVideo(filepath.Ext(f.Name())) {
+			continue
 		}
 
-		if num != "" {
-			num = strings.ToUpper(num)
-			log.Infof("num %s match!", num)
-			b, err := GetNfo(s, num)
+		if num, s := GetNum(f.Name()); num != "" {
+			log.Infof("Match num %s!", num)
+			b, err := GetNfo(num, s)
 			if err != nil {
 				log.Error(err)
-				return nil
+				continue
 			}
-			var nfoName string
-			if s.GetPremiered() != ""{
-				nfoName = path.Join(outputPath, s.GetPremiered()[:4], fmt.Sprintf("%s.nfo", num))
-			}else{
-				nfoName = path.Join(outputPath, s.GetPremiered(), fmt.Sprintf("%s.nfo", num))
-			}
-			jpgName := path.Join(outputPath, s.GetPremiered()[:4], fmt.Sprintf("%s.jpg", num))
-			err = ensureDir(filepath.Dir(nfoName))
+
+			outputPath = basePath
+			err = MakeOutputPath(s)
 			if err != nil {
 				log.Error(err)
-				return nil
+				continue
 			}
-			err = ioutil.WriteFile(nfoName, b, 0644)
+
+			err = BuildNfo(string(b), num)
 			if err != nil {
 				log.Error(err)
-				return nil
+				continue
 			}
-			log.Infof("%s built!", nfoName)
-			item := DownloadItem{
-				Name:    jpgName,
+
+			err = DownCover(DownloadItem{
+				Name:    path.Join(outputPath, fmt.Sprintf("%s.jpg", num)),
 				Url:     s.GetCover(),
 				NeedCut: s.NeedCut(),
-			}
-			if _, err := os.Stat(item.Name); os.IsNotExist(err) {
-				wg.Add(1)
-				go download(item)
+			})
+			if err != nil {
+				log.Error(err)
+				continue
 			}
 
-			newPath := strings.ToUpper(num) + filepath.Ext(pathX)
-			if s.GetPremiered() != ""{
-				err = os.Rename(pathX, path.Join(outputPath, s.GetPremiered()[:4], newPath))
-			}else{
-				err = os.Rename(pathX, path.Join(outputPath, newPath))
-			}
+			err = MoveFile(num, f.Name())
 			if err != nil {
-				return err
+				log.Error(err)
+				continue
 			}
 		}
-
-		return nil
 	}
-
-	_ = filepath.Walk(scanPath, ff)
-	wg.Wait()
 }
 
-func GetNfo(s scraper.Scraper, num string) ([]byte, error) {
+func GetNfo(num string, s scraper.Scraper) ([]byte, error) {
 	s.SetHTTPClient(proxyClient)
 	err := s.FetchDoc(num)
 	if err != nil {
@@ -187,23 +137,22 @@ type DownloadItem struct {
 	NeedCut bool
 }
 
-func download(item DownloadItem) {
+func DownCover(item DownloadItem) error {
 	log.Infof("Downloading from %s", item.Url)
 
 	req, _ := grab.NewRequest(item.Name, item.Url)
 	resp := grabClient.Do(req)
 
 	if err := resp.Err(); err != nil {
-		log.Errorf("%s: %v", resp.Filename, err)
+		return err
 	}
 
 	if resp.IsComplete() {
 		pngName := strings.ReplaceAll(resp.Filename, "jpg", "png")
 		_ = cropOrCopy(resp.Filename, pngName, item.NeedCut)
 		log.Infof("Finished %s %d / %d bytes (%d%%)", resp.Filename, resp.BytesComplete(), resp.Size, int(100*resp.Progress()))
-		wg.Done()
 	}
-	return
+	return nil
 }
 
 func cropOrCopy(jpgName, pngName string, needCut bool) error {
@@ -252,6 +201,9 @@ func cropOrCopy(jpgName, pngName string, needCut bool) error {
 }
 
 func ensureDir(dirName string) error {
+	if _, err := os.Stat(dirName); err == nil {
+		return nil
+	}
 	err := os.Mkdir(dirName, os.ModeDir)
 	if err == nil || os.IsExist(err) {
 		return nil
@@ -274,4 +226,52 @@ func IsValidVideo(ext string) bool {
 		return true
 	}
 	return false
+}
+
+func GetNum(name string) (num string, s scraper.Scraper) {
+	typeHeyzo, _ := regexp.Compile(`(heyzo|HEYZO)-[0-9]{4}`)
+	typeFc2, _ := regexp.Compile(`(fc2|FC2|ppv|PPV)-[0-9]{6,7}`)
+	typeMGStage, _ := regexp.Compile(`(siro|SIRO|[0-9]{3,4}[a-zA-Z]{2,5})-[0-9]{3,4}`)
+	typeDmm, _ := regexp.Compile(`[a-zA-Z]{2,5}00[0-9]{3,4}`)
+	typeDefault, _ := regexp.Compile(`[a-zA-Z]{2,5}-[0-9]{3,4}`)
+
+	switch {
+	case typeHeyzo.MatchString(name):
+		num = typeHeyzo.FindString(name)
+		s = &scraper.HeyzoScraper{}
+	case typeFc2.MatchString(name):
+		num = typeFc2.FindString(name)
+		s = &scraper.Fc2Scraper{}
+	case typeMGStage.MatchString(name):
+		num = typeMGStage.FindString(name)
+		s = &scraper.MGStageScraper{}
+	case typeDmm.MatchString(name):
+		num = typeDmm.FindString(name)
+		//num = strings.Replace(num, "00", "-", 1)
+		s = &scraper.DMMScraper{}
+	default:
+		num = typeDefault.FindString(name)
+		s = &scraper.DMMScraper{}
+	}
+
+	num = strings.ToUpper(num)
+	return
+}
+
+func MakeOutputPath(s scraper.Scraper) error {
+	if len(s.GetPremiered()) > 4 {
+		outputPath = path.Join(outputPath, s.GetPremiered()[:4])
+	}
+	log.Infof("Making output path %s", outputPath)
+	return ensureDir(outputPath)
+}
+
+func BuildNfo(b, num string) error {
+	nfoName := path.Join(outputPath, fmt.Sprintf("%s.nfo", num))
+	return ioutil.WriteFile(nfoName, []byte(b), 0644)
+}
+
+func MoveFile(num, name string) error {
+	newPath := strings.ToUpper(num) + filepath.Ext(name)
+	return os.Rename(name, path.Join(outputPath, newPath))
 }

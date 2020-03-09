@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	dmmSearchUrl = "https://www.dmm.co.jp/mono/dvd/-/search/=/searchstr=%s/"
+	dmmSearchUrl  = "https://www.dmm.co.jp/mono/dvd/-/search/=/searchstr=%s/"
+	dmmSearchUrl2 = "https://www.dmm.co.jp/search/=/searchstr=%s/n1=FgRCTw9VBA4GAVhfWkIHWw__/"
 )
 
 type DMMScraper struct {
@@ -51,7 +52,6 @@ func (s *DMMScraper) FetchDoc(num string) error {
 		}
 
 		listDoc, err := goquery.NewDocumentFromReader(res.Body)
-
 		if err != nil {
 			return err
 		}
@@ -59,7 +59,25 @@ func (s *DMMScraper) FetchDoc(num string) error {
 		// Find the ul id=list items
 		itemCount := listDoc.Find("#list li").Length()
 		if itemCount == 0 {
-			return errors.New("record not found")
+			log.Infof("fetching %s", fmt.Sprintf(dmmSearchUrl2, num))
+			res, err = s.HTTPClient.Get(fmt.Sprintf(dmmSearchUrl2, num))
+			if err != nil {
+				return err
+			}
+			if res.StatusCode != 200 {
+				return errors.New(fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status))
+			}
+
+			listDoc, err = goquery.NewDocumentFromReader(res.Body)
+			if err != nil {
+				return err
+			}
+
+			// Find the ul id=list items
+			itemCount := listDoc.Find("#list li").Length()
+			if itemCount == 0 {
+				return errors.New("record not found")
+			}
 		}
 		var hrefs []string
 		listDoc.Find("#list li").Each(func(i int, s *goquery.Selection) {
@@ -220,6 +238,7 @@ func getDmmTableValue(key string, doc *goquery.Document) (val string) {
 				if val == "----" {
 					val = ""
 				}
+				val = strings.TrimSpace(val)
 				return false
 			}
 			return true
