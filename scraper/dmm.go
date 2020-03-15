@@ -32,6 +32,8 @@ func (s *DMMScraper) SetDocUrl(url string) {
 }
 
 func (s *DMMScraper) FetchDoc(num string) error {
+	num = strings.Replace(num, "-", "00", 1)
+
 	if s.HTTPClient == nil {
 		s.HTTPClient = &http.Client{
 			Transport: &http.Transport{
@@ -82,9 +84,7 @@ func (s *DMMScraper) FetchDoc(num string) error {
 		var hrefs []string
 		listDoc.Find("#list li").Each(func(i int, s *goquery.Selection) {
 			href, _ := s.Find(".tmb a").Attr("href")
-			if strings.Contains(href, strings.Replace(strings.ToLower(num), "-", "", 1)) {
-				hrefs = append(hrefs, href)
-			}
+			hrefs = append(hrefs, href)
 		})
 
 		if len(hrefs) == 0 {
@@ -174,8 +174,8 @@ func (s *DMMScraper) GetActors() (actors []string) {
 	if s.doc == nil {
 		return
 	}
-	s.doc.Find("#performer").Each(func(i int, s *goquery.Selection) {
-		actors = append(actors, s.Find("a").Text())
+	s.doc.Find("#performer a").Each(func(i int, s *goquery.Selection) {
+		actors = append(actors, s.Text())
 	})
 	return
 }

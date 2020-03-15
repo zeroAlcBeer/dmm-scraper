@@ -259,7 +259,7 @@ func GetNum(name string) (num string, s scraper.Scraper) {
 }
 
 func MakeOutputPath(s scraper.Scraper) error {
-	if len(s.GetPremiered()) > 4 {
+	if len(s.GetPremiered()) >= 4 {
 		outputPath = path.Join(outputPath, s.GetPremiered()[:4])
 	}
 	log.Infof("Making output path %s", outputPath)
