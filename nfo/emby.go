@@ -68,7 +68,7 @@ func Build(s scraper.Scraper, num string) ([]byte, error) {
 		Poster:    num + ".png",
 	}
 
-	if s.GetPremiered() != "" {
+	if len(s.GetPremiered()) >= 4 {
 		m.Year = s.GetPremiered()[:4]
 	}
 	x, err := xml.MarshalIndent(m, "", "  ")
