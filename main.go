@@ -247,7 +247,7 @@ func GetNum(name string) (num string, s scraper.Scraper) {
 		s = &scraper.MGStageScraper{}
 	case typeDmm.MatchString(name):
 		num = typeDmm.FindString(name)
-		//num = strings.Replace(num, "00", "-", 1)
+		num = strings.Replace(num, "00", "-", 1)
 		s = &scraper.DMMScraper{}
 	default:
 		num = typeDefault.FindString(name)

@@ -32,8 +32,6 @@ func (s *DMMScraper) SetDocUrl(url string) {
 }
 
 func (s *DMMScraper) FetchDoc(num string) error {
-	num = strings.Replace(num, "-", "00", 1)
-
 	if s.HTTPClient == nil {
 		s.HTTPClient = &http.Client{
 			Transport: &http.Transport{
@@ -91,12 +89,12 @@ func (s *DMMScraper) FetchDoc(num string) error {
 			return errors.New("fail to make number specific")
 		}
 
-		s.docUrl = hrefs[0]
-		if len(hrefs) > 1 {
-			for _, href := range hrefs[1:] {
-				if len(href) < len(s.docUrl) {
-					s.docUrl = href
-				}
+		numPart := strings.Split(num, "-")[1]
+		minLen := 100
+		for _, href := range hrefs {
+			if strings.Contains(href, numPart) && len(href) < minLen {
+				s.docUrl = href
+				minLen = len(href)
 			}
 		}
 	} else {
