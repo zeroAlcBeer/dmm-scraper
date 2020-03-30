@@ -4,13 +4,10 @@ import (
 	"better-av-tool/log"
 	"better-av-tool/nfo"
 	"better-av-tool/scraper"
+
 	"context"
 	"crypto/tls"
-	"flag"
 	"fmt"
-	"github.com/cavaliercoder/grab"
-	"github.com/oliamb/cutter"
-	"golang.org/x/net/proxy"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -23,6 +20,11 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/cavaliercoder/grab"
+	"github.com/oliamb/cutter"
+	"github.com/spf13/viper"
+	"golang.org/x/net/proxy"
 )
 
 var (
@@ -34,13 +36,43 @@ var (
 	grabClient  *grab.Client
 )
 
+var (
+	conf Conf
+)
+
+type OutputConf struct {
+	Path string
+}
+
+type ProxyConf struct {
+	Enable bool
+	Socket string
+}
+
+type Conf struct {
+	Output OutputConf
+	Proxy  ProxyConf
+}
+
 func init() {
-	flag.StringVar(&proxyUrl, "proxy", "", "set proxy url")
-	flag.Parse()
+	viper.SetConfigName("config")
+	viper.AddConfigPath(".")
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("Error reading config file, %s", err)
+	}
+	err := viper.Unmarshal(&conf)
+	if err != nil {
+		log.Fatalf("unable to decode into struct, %v", err)
+	}
 }
 
 func main() {
-	if proxyUrl != "" {
+	if err := ensureDir(conf.Output.Path); err != nil {
+		log.Fatal(err)
+	}
+
+	proxyClient := &http.Client{}
+	if conf.Proxy.Enable {
 		url, err := url.Parse(proxyUrl)
 		if err != nil {
 			log.Fatal(err)
@@ -49,7 +81,6 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		proxyClient = &http.Client{}
 		proxyClient.Transport = &http.Transport{
 			DialContext: func(ctx context.Context, network, addr string) (conn net.Conn, e error) {
 				c, e := dialer.Dial(network, addr)
@@ -57,18 +88,10 @@ func main() {
 			},
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
-
-		grabClient = grab.NewClient()
-		if proxyClient != nil {
-			grabClient.HTTPClient = proxyClient
-		}
-		grabClient.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36"
-
 	}
 
-	if err := ensureDir("output"); err != nil {
-		log.Fatal(err)
-	}
+	grabClient = grab.NewClient()
+	grabClient.HTTPClient = proxyClient
 
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
