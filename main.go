@@ -28,16 +28,10 @@ import (
 )
 
 var (
-	basePath   = "output"
+	conf Conf
 	outputPath string
-	proxyUrl   string
-
 	proxyClient *http.Client
 	grabClient  *grab.Client
-)
-
-var (
-	conf Conf
 )
 
 type OutputConf struct {
@@ -71,9 +65,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	proxyClient := &http.Client{}
+	proxyClient = &http.Client{}
 	if conf.Proxy.Enable {
-		url, err := url.Parse(proxyUrl)
+		url, err := url.Parse(conf.Proxy.Socket)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -113,7 +107,7 @@ func main() {
 				continue
 			}
 
-			outputPath = basePath
+			outputPath = conf.Output.Path
 			err = MakeOutputPath(s)
 			if err != nil {
 				log.Error(err)
