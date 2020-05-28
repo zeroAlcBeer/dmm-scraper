@@ -1,15 +1,10 @@
 package scraper
 
 import (
-	"errors"
 	"fmt"
-	"net/http"
-	"strings"
-	"time"
-
 	"github.com/PuerkitoBio/goquery"
-
-	"better-av-tool/log"
+	"regexp"
+	"strings"
 )
 
 const (
@@ -18,55 +13,19 @@ const (
 
 type MGStageScraper struct {
 	doc        *goquery.Document
-	docUrl     string
-	HTTPClient *http.Client
 }
 
-func (s *MGStageScraper) SetHTTPClient(client *http.Client) {
-	s.HTTPClient = client
-}
-
-func (s *MGStageScraper) SetDocUrl(url string) {
-	s.docUrl = url
-}
-
-func (s *MGStageScraper) FetchDoc(num string) error {
-	if s.HTTPClient == nil {
-		s.HTTPClient = &http.Client{
-			Transport: &http.Transport{
-				Proxy: http.ProxyFromEnvironment,
-			},
-		}
-	}
-	s.HTTPClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
-
-	s.docUrl = fmt.Sprintf(mgstageDetailUrl, strings.ToUpper(num))
-
-	log.Infof("fetching %s", s.docUrl)
-	req, err := http.NewRequest("GET", s.docUrl, nil)
-	if err != nil {
+func (s *MGStageScraper) FetchDoc(query, u string) (err error) {
+	if u != "" {
+		s.doc, err = GetDocFromUrl(u)
 		return err
 	}
-	// $.cookie('adc','1',{domain:'mgstage.com',path:'/',expires:dt});
-	c := &http.Cookie{
-		Name:    "adc",
-		Value:   "1",
-		Path:    "/",
-		Domain:  "mgstage.com",
-		Expires: time.Now().Add(1 * time.Hour),
-	}
-	req.AddCookie(c)
-	res, err := s.HTTPClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return errors.New(fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status))
-	}
-	s.doc, err = goquery.NewDocumentFromReader(res.Body)
+	//proxyClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+	//	return http.ErrUseLastResponse
+	//}
+
+	u = fmt.Sprintf(mgstageDetailUrl, strings.ToUpper(query))
+	s.doc, err = GetDocFromUrl(u)
 	return err
 }
 
@@ -151,14 +110,22 @@ func (s *MGStageScraper) GetCover() string {
 }
 
 func (s *MGStageScraper) GetWebsite() string {
-	return s.docUrl
+	return s.doc.Url.String()
 }
 
-func (s *MGStageScraper) GetPremiered() string {
+func (s *MGStageScraper) GetPremiered() (rel string) {
 	if s.doc == nil {
 		return ""
 	}
-	return strings.TrimSpace(getMgstageTableValue("配信開始日", s.doc).Find("td").Text())
+	rel = strings.TrimSpace(getMgstageTableValue("配信開始日", s.doc).Find("td").Text())
+	return strings.Replace(rel, "/", "-", -1)
+}
+
+func (s *MGStageScraper) GetYear() (rel string) {
+	if s.doc == nil {
+		return ""
+	}
+	return regexp.MustCompile(`\d{4}`).FindString(s.GetPremiered())
 }
 
 func (s *MGStageScraper) GetSeries() string {
