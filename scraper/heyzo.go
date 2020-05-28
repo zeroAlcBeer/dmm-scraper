@@ -3,19 +3,15 @@ package scraper
 import (
 	"better-av-tool/log"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"html"
-	"net/http"
 	"regexp"
 	"strings"
 )
 
 type HeyzoScraper struct {
 	doc        *goquery.Document
-	docUrl     string
-	HTTPClient *http.Client
 	movieId    string
 }
 
@@ -67,42 +63,16 @@ type HeyzoData struct {
 	} `json:"aggregateRating"`
 }
 
-func (s *HeyzoScraper) FetchDoc(num string) error {
-	if s.HTTPClient == nil {
-		s.HTTPClient = &http.Client{
-			Transport: &http.Transport{
-				Proxy: http.ProxyFromEnvironment,
-			},
-		}
-	}
-	typeHeyzo, _ := regexp.Compile(`[0-9]{4}`)
-	s.movieId = typeHeyzo.FindString(num)
-
-	s.docUrl = fmt.Sprintf(heyzoDetailUrl, s.movieId)
-
-	log.Infof("fetching %s", s.docUrl)
-	req, err := http.NewRequest("GET", s.docUrl, nil)
-	if err != nil {
+func (s *HeyzoScraper) FetchDoc(query, u string) (err error) {
+	if u != "" {
+		s.doc, err = GetDocFromUrl(u)
 		return err
 	}
-	res, err := s.HTTPClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return errors.New(fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status))
-	}
-	s.doc, err = goquery.NewDocumentFromReader(res.Body)
+	s.movieId = regexp.MustCompile("[0-9]+").FindString(query)
+
+	u = fmt.Sprintf(heyzoDetailUrl, s.movieId)
+	s.doc, err = GetDocFromUrl(u)
 	return err
-}
-
-func (s *HeyzoScraper) SetHTTPClient(client *http.Client) {
-	s.HTTPClient = client
-}
-
-func (s *HeyzoScraper) SetDocUrl(url string) {
-	s.docUrl = url
 }
 
 func (s *HeyzoScraper) GetPlot() string {
@@ -182,15 +152,22 @@ func (s *HeyzoScraper) GetCover() string {
 }
 
 func (s *HeyzoScraper) GetWebsite() string {
-	return s.docUrl
+	return s.doc.Url.String()
 }
 
-func (s *HeyzoScraper) GetPremiered() string {
+func (s *HeyzoScraper) GetPremiered() (rel string) {
 	if s.doc == nil {
 		return ""
 	}
-	p := s.doc.Find(".table-release-day td").Last().Text()
-	return strings.TrimSpace(p)
+	rel = s.doc.Find(".table-release-day td").Last().Text()
+	return strings.Replace(strings.TrimSpace(rel), "/", "-", -1)
+}
+
+func (s *HeyzoScraper) GetYear() (rel string) {
+	if s.doc == nil {
+		return ""
+	}
+	return regexp.MustCompile(`\d{4}`).FindString(s.GetPremiered())
 }
 
 func (s *HeyzoScraper) GetSeries() string {

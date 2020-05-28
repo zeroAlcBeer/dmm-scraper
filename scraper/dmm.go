@@ -3,12 +3,10 @@ package scraper
 import (
 	"errors"
 	"fmt"
-	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-
-	"better-av-tool/log"
 )
 
 const (
@@ -17,101 +15,55 @@ const (
 )
 
 type DMMScraper struct {
-	doc        *goquery.Document
-	docUrl     string
-	HTTPClient *http.Client
-	isArchive  bool
+	doc *goquery.Document
+	//isArchive bool
 }
 
-func (s *DMMScraper) SetHTTPClient(client *http.Client) {
-	s.HTTPClient = client
-}
+// 获取刮削的内容
+func (s *DMMScraper) FetchDoc(query, url string) (err error) {
+	// 如果有url，就直接从url刮
+	if url != "" {
 
-func (s *DMMScraper) SetDocUrl(url string) {
-	s.docUrl = url
-}
-
-func (s *DMMScraper) FetchDoc(num string) error {
-	if s.HTTPClient == nil {
-		s.HTTPClient = &http.Client{
-			Transport: &http.Transport{
-				Proxy: http.ProxyFromEnvironment,
-			},
-		}
+		s.doc, err = GetDocFromUrl(url)
+		return err
 	}
 
-	if s.docUrl == "" {
-		log.Infof("fetching %s", fmt.Sprintf(dmmSearchUrl, num))
-		res, err := s.HTTPClient.Get(fmt.Sprintf(dmmSearchUrl, num))
-		if err != nil {
-			return err
-		}
-		defer res.Body.Close()
-		if res.StatusCode != 200 {
-			return errors.New(fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status))
-		}
+	// dmm 搜索页
+	url = fmt.Sprintf(dmmSearchUrl, query)
 
-		listDoc, err := goquery.NewDocumentFromReader(res.Body)
-		if err != nil {
-			return err
-		}
-
-		// Find the ul id=list items
-		itemCount := listDoc.Find("#list li").Length()
-		if itemCount == 0 {
-			log.Infof("fetching %s", fmt.Sprintf(dmmSearchUrl2, num))
-			res, err = s.HTTPClient.Get(fmt.Sprintf(dmmSearchUrl2, num))
-			if err != nil {
-				return err
-			}
-			if res.StatusCode != 200 {
-				return errors.New(fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status))
-			}
-
-			listDoc, err = goquery.NewDocumentFromReader(res.Body)
-			if err != nil {
-				return err
-			}
-
-			// Find the ul id=list items
-			itemCount := listDoc.Find("#list li").Length()
-			if itemCount == 0 {
-				return errors.New("record not found")
-			}
-		}
-		var hrefs []string
-		listDoc.Find("#list li").Each(func(i int, s *goquery.Selection) {
-			href, _ := s.Find(".tmb a").Attr("href")
-			hrefs = append(hrefs, href)
-		})
-
-		if len(hrefs) == 0 {
-			return errors.New("fail to make number specific")
-		}
-
-		numPart := strings.Split(num, "-")[1]
-		minLen := 100
-		for _, href := range hrefs {
-			if strings.Contains(href, numPart) && len(href) < minLen {
-				s.docUrl = href
-				minLen = len(href)
-			}
-		}
-	} else {
-		s.isArchive = true
-	}
-
-	log.Infof("fetching %s", s.docUrl)
-	resDetail, err := s.HTTPClient.Get(s.docUrl)
+	s.doc, err = GetDocFromUrl(url)
 	if err != nil {
 		return err
 	}
-	defer resDetail.Body.Close()
-	if resDetail.StatusCode != 200 {
-		return errors.New(fmt.Sprintf("status code error: %d %s", resDetail.StatusCode, resDetail.Status))
+	// 二次搜索
+	if s.doc.Find("#list li").Length() == 0 {
+		url = fmt.Sprintf(dmmSearchUrl2, query)
+
+		s.doc, err = GetDocFromUrl(url)
+		if err != nil {
+			return err
+		}
+	}
+	var hrefs []string
+	s.doc.Find("#list li").Each(func(i int, s *goquery.Selection) {
+		href, _ := s.Find(".tmb a").Attr("href")
+		hrefs = append(hrefs, href)
+	})
+
+	if len(hrefs) == 0 {
+		return errors.New("record not found")
+	}
+	// 多个结果时，取最短长度
+	nums := regexp.MustCompile("[0-9]+").FindAllString(query, -1)
+	minLen := 100
+	for _, href := range hrefs {
+		if strings.Contains(href, nums[len(nums)-1]) && len(href) < minLen {
+			url = href
+			minLen = len(href)
+		}
 	}
 
-	s.doc, err = goquery.NewDocumentFromReader(resDetail.Body)
+	s.doc, err = GetDocFromUrl(url)
 	return err
 }
 
@@ -127,21 +79,21 @@ func (s *DMMScraper) GetTitle() string {
 	if s.doc == nil {
 		return ""
 	}
-	return s.doc.Find("#title").Text()
+	return s.GetNumber() + " " + s.doc.Find("#title").Text()
 }
 
 func (s *DMMScraper) GetDirector() string {
 	if s.doc == nil {
 		return ""
 	}
-	return getDmmTableValue("監督", s.doc)
+	return getDmmTableValue2(5, s.doc)
 }
 
 func (s *DMMScraper) GetRuntime() string {
 	if s.doc == nil {
 		return ""
 	}
-	return getDmmTableValue("収録時間", s.doc)
+	return getDmmTableValue2(3, s.doc)
 }
 
 func (s *DMMScraper) GetTags() (tags []string) {
@@ -165,7 +117,7 @@ func (s *DMMScraper) GetMaker() string {
 	if s.doc == nil {
 		return ""
 	}
-	return getDmmTableValue("メーカー", s.doc)
+	return getDmmTableValue2(7, s.doc)
 }
 
 func (s *DMMScraper) GetActors() (actors []string) {
@@ -182,64 +134,82 @@ func (s *DMMScraper) GetLabel() string {
 	if s.doc == nil {
 		return ""
 	}
-	return getDmmTableValue("レーベル", s.doc)
+	return getDmmTableValue2(8, s.doc)
 }
 
 func (s *DMMScraper) GetNumber() string {
 	if s.doc == nil {
 		return ""
 	}
-	return getDmmTableValue("品番", s.doc)
+	return getDmmTableValue2(10, s.doc)
 }
 
 func (s *DMMScraper) GetCover() string {
-	img, _ := s.doc.Find("#sample-video a").First().Attr("href")
-
-	if s.isArchive {
-		img = img[strings.LastIndex(img, "http"):]
-		log.Info(img)
+	if s.doc == nil {
+		return ""
 	}
+	img, _ := s.doc.Find("#sample-video a").First().Attr("href")
+	//
+	//if s.isArchive {
+	//	img = img[strings.LastIndex(img, "http"):]
+	//	log.Info(img)
+	//}
 	return img
 }
 
 func (s *DMMScraper) GetWebsite() string {
-	return s.docUrl
-}
-
-func (s *DMMScraper) GetPremiered() string {
 	if s.doc == nil {
 		return ""
 	}
-	return getDmmTableValue("発売日", s.doc)
+	return s.doc.Url.String()
+}
+
+func (s *DMMScraper) GetPremiered() (rel string) {
+	if s.doc == nil {
+		return ""
+	}
+	rel = getDmmTableValue2(2, s.doc)
+	return strings.Replace(rel, "/", "-", -1)
+}
+
+func (s *DMMScraper) GetYear() (rel string) {
+	if s.doc == nil {
+		return ""
+	}
+	return regexp.MustCompile(`\d{4}`).FindString(s.GetPremiered())
 }
 
 func (s *DMMScraper) GetSeries() string {
 	if s.doc == nil {
 		return ""
 	}
-	return getDmmTableValue("シリーズ", s.doc)
+	return getDmmTableValue2(6, s.doc)
 }
 
 func (s *DMMScraper) NeedCut() bool {
 	return true
 }
 
-//
-func getDmmTableValue(key string, doc *goquery.Document) (val string) {
-	doc.Find("table[class=mg-b20] tr").EachWithBreak(
-		func(i int, s *goquery.Selection) bool {
-			if strings.Contains(s.Text(), key) {
-				val = s.Find("td a").Text()
-				if val == "" {
-					val = s.Find("td").Last().Text()
-				}
-				if val == "----" {
-					val = ""
-				}
-				val = strings.TrimSpace(val)
-				return false
-			}
-			return true
-		})
-	return
+//func getDmmTableValue(key string, doc *goquery.Document) (val string) {
+//	doc.Find("table[class=mg-b20] tr").EachWithBreak(
+//		func(i int, s *goquery.Selection) bool {
+//			if strings.Contains(s.Text(), key) {
+//				val = s.Find("td a").Text()
+//				if val == "" {
+//					val = s.Find("td").Last().Text()
+//				}
+//				if val == "----" {
+//					val = ""
+//				}
+//				val = strings.TrimSpace(val)
+//				return false
+//			}
+//			return true
+//		})
+//	return
+//}
+
+func getDmmTableValue2(x int, doc *goquery.Document) (val string) {
+	//log.Info(doc.Find("table[class=mg-b20] td[width]").Html())
+	return doc.Find("table[class=mg-b20] td[width]").Eq(x-1).Text()
 }

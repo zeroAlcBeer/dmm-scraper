@@ -1,46 +1,27 @@
 package scraper
 
 import (
-	"net/http"
 	"testing"
-
-	"github.com/PuerkitoBio/goquery"
 )
-var mgsTests map[string]*MGStageScraper
 
 func TestMGStageScraper_FetchDoc(t *testing.T) {
-	type fields struct {
-		doc        *goquery.Document
-		docUrl     string
-		HTTPClient *http.Client
-	}
-	type args struct {
-		num string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
+	tests := []testCase{
 		{
 			name: "fetchDoc expects no error",
 			args: args{
-				num: "siro-3171",
+				query: "siro-3171",
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, ok := mgsTests[tt.args.num]; !ok {
-				mgsTests[tt.args.num] = &MGStageScraper{
+			if _, ok := mgsTests[tt.args.query]; !ok {
+				mgsTests[tt.args.query] = &MGStageScraper{
 					doc:        tt.fields.doc,
-					docUrl:     tt.fields.docUrl,
-					HTTPClient: proxyClient,
 				}
 			}
-			if err := mgsTests[tt.args.num].FetchDoc(tt.args.num); (err != nil) != tt.wantErr {
+			if err := mgsTests[tt.args.query].FetchDoc(tt.args.query,tt.args.url); (err != nil) != tt.wantErr {
 				t.Errorf("FetchDoc() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -48,25 +29,18 @@ func TestMGStageScraper_FetchDoc(t *testing.T) {
 }
 
 func TestMGStageScraper_GetPlot(t *testing.T) {
-	type args struct {
-		num string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
+	tests := []testCase{
 		{
 			name: "siro-3171 expects title",
 			args: args{
-				num: "siro-3171",
+				query: "siro-3171",
 			},
 			want: "とても落ち着いた雰囲気のお姉さんタイプのあゆみさん。まるでモデルさんみたいです！普段はOLをしているらしいですが、こんな綺麗なお姉さんが仕事場にいるなんて、男はほっとかないでしょ！と思いきや全然誘われないそうです。逆に綺麗すぎてみんな敬遠してるのかなーと勝手に想像しちゃいますね。でも上司からはすれ違いざまにお尻などを触られるらしく、それは「相手が私と仲良くなりたいのかなって思っちゃいます」と女神のような返答。クールな美女タイプかと思いきや、中身はとても優しい暖かお姉さんなんですね。現在は彼氏はいないそうで、ムラムラしたときは専らオナニー！そんなオナニーを見せて下さい！って言ったら恥ずかしがりながらオナニーを披露してくれます。最初は緊張気味でしたが、いざ感じ始めるとその勢いは素晴らしいの一言！大胆に自分の秘部を弄りエロスイッチオン！目がトロンとして、男優のち○ぽを見つめながら熱い吐息を吐いておねだりしてきます。さっきまでは優しいお姉さんだったのに、スイッチが入ったらいきなりエロい妖艶なお姉さんに早変わり！このギャップがまたいいですね。色んな女性の表情が見えるって良いですね。",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := mgsTests[tt.args.num].GetPlot(); got != tt.want {
+			if got := mgsTests[tt.args.query].GetPlot(); got != tt.want {
 				t.Errorf("GetPlot() = %v, want %v", got, tt.want)
 			}
 		})
@@ -74,25 +48,18 @@ func TestMGStageScraper_GetPlot(t *testing.T) {
 }
 
 func TestMGStageScraper_GetTitle(t *testing.T) {
-	type args struct {
-		num string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
+	tests := []testCase{
 		{
 			name: "siro-3171 expects title",
 			args: args{
-				num: "siro-3171",
+				query: "siro-3171",
 			},
 			want: "【初撮り】ネットでAV応募→AV体験撮影 400",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := mgsTests[tt.args.num].GetTitle(); got != tt.want {
+			if got := mgsTests[tt.args.query].GetTitle(); got != tt.want {
 				t.Errorf("GetTitle() = %v, want %v", got, tt.want)
 			}
 		})

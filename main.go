@@ -1,6 +1,7 @@
 package main
 
 import (
+	"better-av-tool/grabber"
 	"better-av-tool/log"
 	"better-av-tool/nfo"
 	"better-av-tool/scraper"
@@ -8,9 +9,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"image"
-	"image/jpeg"
-	"image/png"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -18,20 +16,16 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 
-	"github.com/cavaliercoder/grab"
-	"github.com/oliamb/cutter"
 	"github.com/spf13/viper"
 	"golang.org/x/net/proxy"
 )
 
 var (
-	conf Conf
-	outputPath string
+	conf        Conf
+	outputPath  string
 	proxyClient *http.Client
-	grabClient  *grab.Client
 )
 
 type OutputConf struct {
@@ -49,6 +43,13 @@ type Conf struct {
 }
 
 func init() {
+	initConf()
+	initProxy()
+	initGrabber()
+	initScraper()
+}
+
+func initConf() {
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	if err := viper.ReadInConfig(); err != nil {
@@ -60,11 +61,7 @@ func init() {
 	}
 }
 
-func main() {
-	if err := ensureDir(conf.Output.Path); err != nil {
-		log.Fatal(err)
-	}
-
+func initProxy() {
 	proxyClient = &http.Client{}
 	if conf.Proxy.Enable {
 		url, err := url.Parse(conf.Proxy.Socket)
@@ -83,9 +80,44 @@ func main() {
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
 	}
+}
 
-	grabClient = grab.NewClient()
-	grabClient.HTTPClient = proxyClient
+func initGrabber() {
+	grabber.SetHTTPClient(proxyClient)
+}
+
+func initScraper() {
+	scraper.SetHTTPClient(proxyClient)
+}
+
+func ensureDir(dirName string) error {
+	if _, err := os.Stat(dirName); err == nil {
+		return nil
+	}
+	err := os.MkdirAll(dirName, os.ModeDir)
+	if err == nil || os.IsExist(err) {
+		return nil
+	} else {
+		return err
+	}
+}
+
+func isValidVideo(ext string) bool {
+	switch strings.ToLower(ext) {
+	case
+		".wmv",
+		".mp4",
+		".avi",
+		".mkv":
+		return true
+	}
+	return false
+}
+
+func main() {
+	//if err := ensureDir(conf.Output.Path); err != nil {
+	//	log.Fatal(err)
+	//}
 
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
@@ -95,200 +127,71 @@ func main() {
 		if f.IsDir() {
 			continue
 		}
-		if !IsValidVideo(filepath.Ext(f.Name())) {
+		ext := filepath.Ext(f.Name())
+		if !isValidVideo(ext) {
 			continue
 		}
+		log.Infof("Check file %s", f.Name())
+		name := strings.TrimSuffix(f.Name(), ext)
 
-		if num, s := GetNum(f.Name()); num != "" {
+		// 用正则处理文件名
+		if num, s := scraper.GetNum(name); num != "" {
 			log.Infof("Match num %s!", num)
-			b, err := GetNfo(num, s)
+
+			// 爬取页面
+			err := s.FetchDoc(num, "")
 			if err != nil {
 				log.Error(err)
 				continue
 			}
 
-			outputPath = conf.Output.Path
-			err = MakeOutputPath(s)
+			// 目录生成
+			outputPath = scraper.ParsePath(s, conf.Output.Path)
+			log.Infof("Making output path %s", outputPath)
+			err = ensureDir(outputPath)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			// 做 nfo
+			model := nfo.Build(s)
+
+			// 下载封面
+			coverSrc, err := grabber.Download(s.GetCover())
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			coverDst := path.Join(outputPath, fmt.Sprintf("%s.jpg", num))
+			_ = os.Rename(coverSrc, coverDst)
+			model.Fanart = []nfo.EmbyMovieThumb{{Thumb: path.Base(coverDst)}}
+			model.Poster = path.Base(coverDst)
+
+			// 封面裁剪
+			if s.NeedCut() {
+				posterDst := strings.Replace(coverDst, "jpg", "png", 1)
+				err = grabber.Crop(coverDst, posterDst)
+				if err != nil {
+					log.Error(err)
+					continue
+				}
+				model.Poster = path.Base(posterDst)
+			}
+
+			// 写 nfo
+			nfoName := path.Join(outputPath, fmt.Sprintf("%s.nfo", num))
+			err = model.WriteFile(nfoName)
 			if err != nil {
 				log.Error(err)
 				continue
 			}
 
-			err = BuildNfo(string(b), num)
+			// 影片重命名
+			videoName := strings.ToUpper(num) + filepath.Ext(f.Name())
+			err = os.Rename(f.Name(), path.Join(outputPath, videoName))
 			if err != nil {
 				log.Error(err)
-				continue
-			}
-
-			err = DownCover(DownloadItem{
-				Name:    path.Join(outputPath, fmt.Sprintf("%s.jpg", num)),
-				Url:     s.GetCover(),
-				NeedCut: s.NeedCut(),
-			})
-			if err != nil {
-				log.Error(err)
-				continue
-			}
-
-			err = MoveFile(num, f.Name())
-			if err != nil {
-				log.Error(err)
-				continue
 			}
 		}
 	}
-}
-
-func GetNfo(num string, s scraper.Scraper) ([]byte, error) {
-	s.SetHTTPClient(proxyClient)
-	err := s.FetchDoc(num)
-	if err != nil {
-		return nil, err
-	}
-	return nfo.Build(s, num)
-}
-
-type DownloadItem struct {
-	Name    string
-	Url     string
-	NeedCut bool
-}
-
-func DownCover(item DownloadItem) error {
-	log.Infof("Downloading from %s", item.Url)
-
-	req, _ := grab.NewRequest(item.Name, item.Url)
-	resp := grabClient.Do(req)
-
-	if err := resp.Err(); err != nil {
-		return err
-	}
-
-	if resp.IsComplete() {
-		pngName := strings.ReplaceAll(resp.Filename, "jpg", "png")
-		_ = cropOrCopy(resp.Filename, pngName, item.NeedCut)
-		log.Infof("Finished %s %d / %d bytes (%d%%)", resp.Filename, resp.BytesComplete(), resp.Size, int(100*resp.Progress()))
-	}
-	return nil
-}
-
-func cropOrCopy(jpgName, pngName string, needCut bool) error {
-	f, err := os.Open(jpgName)
-	if err != nil {
-		log.Error("Cannot open file", err)
-		return err
-	}
-	defer f.Close()
-	img, err := jpeg.Decode(f)
-	if err != nil {
-		log.Error("Cannot decode image:", err)
-		return err
-	}
-	srcW := img.Bounds().Dx()
-	srcH := img.Bounds().Dy()
-	if needCut {
-		img, err = cutter.Crop(img, cutter.Config{
-			Height:  srcH,                       // height in pixel or Y ratio(see Ratio Option below)
-			Width:   378,                        // width in pixel or X ratio
-			Mode:    cutter.TopLeft,             // Accepted Mode: TopLeft, Centered
-			Anchor:  image.Point{srcW - 378, 0}, // Position of the top left point
-			Options: 0,                          // Accepted Option: Ratio
-		})
-
-		if err != nil {
-			log.Error("Cannot Crop image:", err)
-			return err
-		}
-	}
-
-	out, err := os.Create(pngName)
-	if err != nil {
-		log.Error("Cannot create image:", err)
-		return err
-	}
-	defer out.Close()
-	err = png.Encode(out, img)
-
-	if err != nil {
-		log.Error("Cannot Encode image:", err)
-		return err
-	}
-
-	return nil
-}
-
-func ensureDir(dirName string) error {
-	if _, err := os.Stat(dirName); err == nil {
-		return nil
-	}
-	err := os.Mkdir(dirName, os.ModeDir)
-	if err == nil || os.IsExist(err) {
-		return nil
-	} else {
-		return err
-	}
-}
-
-func IsValidVideo(ext string) bool {
-	switch ext {
-	case
-		".wmv",
-		".WMV",
-		".mp4",
-		".MP4",
-		".avi",
-		".AVI",
-		".mkv",
-		".MKV":
-		return true
-	}
-	return false
-}
-
-func GetNum(name string) (num string, s scraper.Scraper) {
-	typeHeyzo, _ := regexp.Compile(`(heyzo|HEYZO)-[0-9]{4}`)
-	typeFc2, _ := regexp.Compile(`(fc2|FC2|ppv|PPV)-[0-9]{6,7}`)
-	typeMGStage, _ := regexp.Compile(`(siro|SIRO|[0-9]{3,4}[a-zA-Z]{2,5})-[0-9]{3,4}`)
-	typeDmm, _ := regexp.Compile(`[a-zA-Z]{2,5}00[0-9]{3,4}`)
-	typeDefault, _ := regexp.Compile(`[a-zA-Z]{2,5}-[0-9]{3,4}`)
-
-	switch {
-	case typeHeyzo.MatchString(name):
-		num = typeHeyzo.FindString(name)
-		s = &scraper.HeyzoScraper{}
-	case typeFc2.MatchString(name):
-		num = typeFc2.FindString(name)
-		s = &scraper.Fc2Scraper{}
-	case typeMGStage.MatchString(name):
-		num = typeMGStage.FindString(name)
-		s = &scraper.MGStageScraper{}
-	case typeDmm.MatchString(name):
-		num = typeDmm.FindString(name)
-		num = strings.Replace(num, "00", "-", 1)
-		s = &scraper.DMMScraper{}
-	default:
-		num = typeDefault.FindString(name)
-		s = &scraper.DMMScraper{}
-	}
-
-	num = strings.ToUpper(num)
-	return
-}
-
-func MakeOutputPath(s scraper.Scraper) error {
-	if len(s.GetPremiered()) >= 4 {
-		outputPath = path.Join(outputPath, s.GetPremiered()[:4])
-	}
-	log.Infof("Making output path %s", outputPath)
-	return ensureDir(outputPath)
-}
-
-func BuildNfo(b, num string) error {
-	nfoName := path.Join(outputPath, fmt.Sprintf("%s.nfo", num))
-	return ioutil.WriteFile(nfoName, []byte(b), 0644)
-}
-
-func MoveFile(num, name string) error {
-	newPath := strings.ToUpper(num) + filepath.Ext(name)
-	return os.Rename(name, path.Join(outputPath, newPath))
 }

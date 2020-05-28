@@ -1,7 +1,9 @@
 # 配置文件
 
 [output]
-path = 'output'
+# 支持输出项目 {year} {maker} {num} {actor}
+# actor按第一位输出
+path = 'output/{year}'
 
 [proxy]
 ## proxy [socks5://][127.0.0.1:]<1-65535>; 代理

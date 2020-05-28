@@ -3,7 +3,7 @@ package nfo
 import (
 	"better-av-tool/scraper"
 	"encoding/xml"
-	"strings"
+	"io/ioutil"
 )
 
 type EmbyMovie struct {
@@ -39,7 +39,7 @@ type EmbyMovieThumb struct {
 	Thumb string `xml:"thumb"`
 }
 
-func Build(s scraper.Scraper, num string) ([]byte, error) {
+func Build(s scraper.Scraper) *EmbyMovie {
 	//releaseTime, err := time.Parse("2006/01/02", )
 	//if err != nil {
 	//	return
@@ -49,12 +49,12 @@ func Build(s scraper.Scraper, num string) ([]byte, error) {
 		actors = append(actors, EmbyMovieActor{Name: name})
 	}
 
-	m := &EmbyMovie{
+	return &EmbyMovie{
 		Plot:      s.GetPlot(),
-		Title:     num + " " + s.GetTitle(),
+		Title:     s.GetTitle(),
 		Director:  s.GetDirector(),
-		Year:      "",
-		Premiered: strings.Replace(s.GetPremiered(), "/", "-", -1),
+		Year:      s.GetYear(),
+		Premiered: s.GetPremiered(),
 		Runtime:   s.GetRuntime(),
 		Genre:     append(s.GetTags(), s.GetSeries(), s.GetLabel()),
 		Tag:       append(s.GetTags(), s.GetSeries(), s.GetLabel()),
@@ -64,17 +64,24 @@ func Build(s scraper.Scraper, num string) ([]byte, error) {
 		Cover:     s.GetCover(),
 		Num:       s.GetNumber(),
 		Website:   s.GetWebsite(),
-		Fanart:    []EmbyMovieThumb{{Thumb: num + ".jpg"}},
-		Poster:    num + ".png",
+		//Fanart:    []EmbyMovieThumb{{Thumb: cover}},
+		//Poster:    "",
 	}
+}
 
-	if len(s.GetPremiered()) >= 4 {
-		m.Year = s.GetPremiered()[:4]
-	}
+func (m *EmbyMovie) ToXML() ([]byte, error) {
 	x, err := xml.MarshalIndent(m, "", "  ")
 	if err != nil {
 		return x, err
 	}
 	x = []byte(xml.Header + string(x))
 	return x, nil
+}
+
+func (m *EmbyMovie) WriteFile(filename string) error {
+	b, err := m.ToXML()
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(filename, b, 0644)
 }
