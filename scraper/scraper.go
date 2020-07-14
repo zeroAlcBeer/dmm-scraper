@@ -84,14 +84,23 @@ func GetDocFromUrl(u string) (*goquery.Document, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := &http.Cookie{
+	cM := &http.Cookie{
 		Name:    "adc",
 		Value:   "1",
 		Path:    "/",
 		Domain:  "mgstage.com",
 		Expires: time.Now().Add(1 * time.Hour),
 	}
-	req.AddCookie(c)
+	req.AddCookie(cM)
+
+	cDmm := &http.Cookie{
+		Name:    "age_check_done",
+		Value:   "1",
+		Path:    "/",
+		Domain:  "dmm.co.jp",
+		Expires: time.Now().Add(1 * time.Hour),
+	}
+	req.AddCookie(cDmm)
 	res, err := proxyClient.Do(req)
 	if err != nil {
 		return nil, err
