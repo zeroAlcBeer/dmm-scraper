@@ -9,7 +9,7 @@ func TestDMMScraper_FetchDoc(t *testing.T) {
 		{
 			name: "fetchDoc expects no error",
 			args: args{
-				query: "gne-218",
+				query: "sdde-552",
 			},
 			wantErr: false,
 		},

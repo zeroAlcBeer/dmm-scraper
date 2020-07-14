@@ -131,23 +131,26 @@ func main() {
 		if !isValidVideo(ext) {
 			continue
 		}
-		log.Infof("Check file %s", f.Name())
+		log.Infof("Check file: %s", f.Name())
 		name := strings.TrimSuffix(f.Name(), ext)
 
 		// 用正则处理文件名
-		if num, s := scraper.GetNum(name); num != "" {
-			log.Infof("Match num %s!", num)
+		if query, num, s := scraper.GetQueryNum(name); query != "" {
+			log.Infof("Scraper get query: %s, num: %s", query, num)
 
 			// 爬取页面
-			err := s.FetchDoc(num, "")
+			err := s.FetchDoc(query, "")
 			if err != nil {
 				log.Error(err)
 				continue
 			}
+			if num == "" {
+				num = s.GetNumber()
+			}
 
 			// 目录生成
 			outputPath = scraper.ParsePath(s, conf.Output.Path)
-			log.Infof("Making output path %s", outputPath)
+			log.Infof("Making output path: %s", outputPath)
 			err = ensureDir(outputPath)
 			if err != nil {
 				log.Error(err)

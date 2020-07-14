@@ -37,8 +37,8 @@ func (s *DMMScraper) FetchDoc(query, url string) (err error) {
 	}
 	// 二次搜索
 	if s.doc.Find("#list li").Length() == 0 {
+		//log.Infof("fetching %s empty", s.doc.Text())
 		url = fmt.Sprintf(dmmSearchUrl2, query)
-
 		s.doc, err = GetDocFromUrl(url)
 		if err != nil {
 			return err
