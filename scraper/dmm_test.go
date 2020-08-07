@@ -9,7 +9,7 @@ func TestDMMScraper_FetchDoc(t *testing.T) {
 		{
 			name: "fetchDoc expects no error",
 			args: args{
-				query: "sdde-552",
+				query: "gne-218",
 			},
 			wantErr: false,
 		},
@@ -71,7 +71,7 @@ func TestDMMScraper_GetDirector(t *testing.T) {
 			args: args{
 				query: "gne-218",
 			},
-			want: "----",
+			want: "",
 		},
 	}
 	for _, tt := range tests {
@@ -242,7 +242,7 @@ func TestDMMScraper_GetTitle(t *testing.T) {
 			args: args{
 				query: "gne-218",
 			},
-			want: "h_479gne218 新・美少女貸切温泉旅行 5",
+			want: "新・美少女貸切温泉旅行 5",
 		},
 	}
 	for _, tt := range tests {

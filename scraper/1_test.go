@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 	gyuttoTests = make(map[string]*GyuttoScraper)
 	dmmTests = make(map[string]*DMMScraper)
 
-	u, _ := url.Parse("socks5://127.0.0.1:7891")
+	u, _ := url.Parse("socks5://192.168.0.110:7891")
 	dialer, err := proxy.FromURL(u, proxy.Direct)
 	if err != nil {
 		log.Fatal(err)
