@@ -39,7 +39,7 @@ type EmbyMovieThumb struct {
 	Thumb string `xml:"thumb"`
 }
 
-func Build(s scraper.Scraper) *EmbyMovie {
+func Build(s scraper.Scraper, num string) *EmbyMovie {
 	//releaseTime, err := time.Parse("2006/01/02", )
 	//if err != nil {
 	//	return
@@ -51,7 +51,7 @@ func Build(s scraper.Scraper) *EmbyMovie {
 
 	return &EmbyMovie{
 		Plot:      s.GetPlot(),
-		Title:     s.GetTitle(),
+		Title:     num + " " + s.GetTitle(),
 		Director:  s.GetDirector(),
 		Year:      s.GetYear(),
 		Premiered: s.GetPremiered(),

@@ -3,10 +3,9 @@ package scraper
 import (
 	"errors"
 	"fmt"
+	"github.com/PuerkitoBio/goquery"
 	"regexp"
 	"strings"
-
-	"github.com/PuerkitoBio/goquery"
 )
 
 const (
@@ -23,7 +22,6 @@ type DMMScraper struct {
 func (s *DMMScraper) FetchDoc(query, url string) (err error) {
 	// 如果有url，就直接从url刮
 	if url != "" {
-
 		s.doc, err = GetDocFromUrl(url)
 		return err
 	}
@@ -54,17 +52,39 @@ func (s *DMMScraper) FetchDoc(query, url string) (err error) {
 		return errors.New("record not found")
 	}
 	// 多个结果时，取最短长度
-	nums := regexp.MustCompile("[0-9]+").FindAllString(query, -1)
-	minLen := 100
+	var detail string
 	for _, href := range hrefs {
-		if strings.Contains(href, nums[len(nums)-1]) && len(href) < minLen {
-			url = href
-			minLen = len(href)
+		if CompareUrl2Query(href, query) {
+			detail = href
 		}
 	}
+	if detail == "" {
+		return errors.New(fmt.Sprintf("unable to match in hrefs %v", hrefs))
+	}
 
-	s.doc, err = GetDocFromUrl(url)
+	s.doc, err = GetDocFromUrl(detail)
 	return err
+}
+
+func CompareUrl2Query(href, query string) bool {
+	var labelMatch bool
+	var numMatch bool
+	cid, _ := regexp.Compile(`cid=([^//]+)`)
+	cids := cid.FindStringSubmatch(href)
+	if len(cids) > 1 {
+		label1, number1 := GetLabelNumber(cids[1])
+		label2, number2 := GetLabelNumber(query)
+		//fmt.Println(label1, number1)
+		//fmt.Println(label2, number2)
+		if label1 == label2 {
+			labelMatch = true
+		}
+
+		if number1 == number2 {
+			numMatch = true
+		}
+	}
+	return labelMatch && numMatch
 }
 
 func (s *DMMScraper) GetPlot() string {
@@ -79,21 +99,21 @@ func (s *DMMScraper) GetTitle() string {
 	if s.doc == nil {
 		return ""
 	}
-	return s.GetNumber() + " " + s.doc.Find("#title").Text()
+	return s.doc.Find("#title").Text()
 }
 
 func (s *DMMScraper) GetDirector() string {
 	if s.doc == nil {
 		return ""
 	}
-	return getDmmTableValue2(5, s.doc)
+	return getDmmTableValue("監督", s.doc)
 }
 
 func (s *DMMScraper) GetRuntime() string {
 	if s.doc == nil {
 		return ""
 	}
-	return getDmmTableValue2(3, s.doc)
+	return getDmmTableValue("収録時間", s.doc)
 }
 
 func (s *DMMScraper) GetTags() (tags []string) {
@@ -117,7 +137,7 @@ func (s *DMMScraper) GetMaker() string {
 	if s.doc == nil {
 		return ""
 	}
-	return getDmmTableValue2(7, s.doc)
+	return getDmmTableValue("メーカー", s.doc)
 }
 
 func (s *DMMScraper) GetActors() (actors []string) {
@@ -134,21 +154,27 @@ func (s *DMMScraper) GetLabel() string {
 	if s.doc == nil {
 		return ""
 	}
-	return getDmmTableValue2(8, s.doc)
+	return getDmmTableValue("レーベル", s.doc)
 }
 
 func (s *DMMScraper) GetNumber() string {
 	if s.doc == nil {
 		return ""
 	}
-	return getDmmTableValue2(10, s.doc)
+	return getDmmTableValue("品番", s.doc)
 }
 
 func (s *DMMScraper) GetCover() string {
 	if s.doc == nil {
 		return ""
 	}
-	img, _ := s.doc.Find("#sample-video a").First().Attr("href")
+	img, _ := s.doc.Find("#sample-video img").First().Attr("src")
+	//if strings.Contains(img, "web.archive.org") {
+	//	img = fmt.Sprintf("http://pics.dmm.co.jp/digital/video/%s/%spl.jpg", s.GetNumber(), s.GetNumber())
+	//}
+	if strings.Contains(img, "ps.jpg") {
+		img = strings.Replace(img, "ps.jpg", "pl.jpg", 1)
+	}
 	//
 	//if s.isArchive {
 	//	img = img[strings.LastIndex(img, "http"):]
@@ -168,7 +194,10 @@ func (s *DMMScraper) GetPremiered() (rel string) {
 	if s.doc == nil {
 		return ""
 	}
-	rel = getDmmTableValue2(2, s.doc)
+	rel = getDmmTableValue("発売日", s.doc)
+	if rel == "" {
+		rel = getDmmTableValue("配信開始日", s.doc)
+	}
 	return strings.Replace(rel, "/", "-", -1)
 }
 
@@ -183,33 +212,33 @@ func (s *DMMScraper) GetSeries() string {
 	if s.doc == nil {
 		return ""
 	}
-	return getDmmTableValue2(6, s.doc)
+	return getDmmTableValue("シリーズ", s.doc)
 }
 
 func (s *DMMScraper) NeedCut() bool {
 	return true
 }
 
-//func getDmmTableValue(key string, doc *goquery.Document) (val string) {
-//	doc.Find("table[class=mg-b20] tr").EachWithBreak(
-//		func(i int, s *goquery.Selection) bool {
-//			if strings.Contains(s.Text(), key) {
-//				val = s.Find("td a").Text()
-//				if val == "" {
-//					val = s.Find("td").Last().Text()
-//				}
-//				if val == "----" {
-//					val = ""
-//				}
-//				val = strings.TrimSpace(val)
-//				return false
-//			}
-//			return true
-//		})
-//	return
-//}
+func getDmmTableValue(key string, doc *goquery.Document) (val string) {
+	doc.Find("table[class=mg-b20] tr").EachWithBreak(
+		func(i int, s *goquery.Selection) bool {
+			if strings.Contains(s.Text(), key) {
+				val = s.Find("td a").Text()
+				if val == "" {
+					val = s.Find("td").Last().Text()
+				}
+				if val == "----" {
+					val = ""
+				}
+				val = strings.TrimSpace(val)
+				return false
+			}
+			return true
+		})
+	return
+}
 
 func getDmmTableValue2(x int, doc *goquery.Document) (val string) {
 	//log.Info(doc.Find("table[class=mg-b20] td[width]").Html())
-	return doc.Find("table[class=mg-b20] td[width]").Eq(x-1).Text()
+	return doc.Find("table[class=mg-b20] td").Eq(x - 1).Text()
 }

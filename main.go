@@ -5,9 +5,9 @@ import (
 	"better-av-tool/log"
 	"better-av-tool/nfo"
 	"better-av-tool/scraper"
-
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -134,19 +134,28 @@ func main() {
 		log.Infof("Check file: %s", f.Name())
 		name := strings.TrimSuffix(f.Name(), ext)
 
+		var input string
+		//fmt.Print("Enter Detail url: ")
+		//fmt.Scanln(&input)
+
 		// 用正则处理文件名
-		if query, num, s := scraper.GetQueryNum(name); query != "" {
-			log.Infof("Scraper get query: %s, num: %s", query, num)
+		if query, s := scraper.GetQuery(name); query != "" {
+			log.Infof("Scraper get query: %s", query)
 
 			// 爬取页面
-			err := s.FetchDoc(query, "")
+			err := s.FetchDoc(query, input)
 			if err != nil {
 				log.Error(err)
 				continue
 			}
-			if num == "" {
-				num = s.GetNumber()
+			log.Infof("Scraper get number: %s", s.GetNumber())
+			if s.GetNumber() == "" {
+				log.Error(errors.New("scraper get number empty"))
+				continue
 			}
+			num := scraper.FormatNum(s.GetNumber())
+			log.Infof("Scraper get num format: %s", num)
+
 
 			// 目录生成
 			outputPath = scraper.ParsePath(s, conf.Output.Path)
@@ -157,7 +166,7 @@ func main() {
 				continue
 			}
 			// 做 nfo
-			model := nfo.Build(s)
+			model := nfo.Build(s, num)
 
 			// 下载封面
 			coverSrc, err := grabber.Download(s.GetCover())

@@ -11,8 +11,8 @@ import (
 )
 
 type HeyzoScraper struct {
-	doc        *goquery.Document
-	movieId    string
+	doc     *goquery.Document
+	movieId string
 }
 
 const (
@@ -109,7 +109,7 @@ func (s *HeyzoScraper) GetTags() (tags []string) {
 	if s.doc == nil {
 		return
 	}
-	s.doc.Find(".tag-keyword-list a").Each(func(i int, ss *goquery.Selection) {
+	s.doc.Find(".tag-keyword-list").First().Find("a").Each(func(i int, ss *goquery.Selection) {
 		tags = append(tags, strings.TrimSpace(ss.Text()))
 	})
 	return
@@ -134,7 +134,7 @@ func (s *HeyzoScraper) GetLabel() string {
 }
 
 func (s *HeyzoScraper) GetNumber() string {
-	return s.movieId
+	return "heyzo" + s.movieId
 }
 
 func (s *HeyzoScraper) GetCover() string {
