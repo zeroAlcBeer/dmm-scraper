@@ -1,4 +1,6 @@
 # better-av-tool
+[![Downloads](https://img.shields.io/github/downloads/CheerChen/better-av-tool/total.svg)](https://github.com/ouqiang/CheerChen/better-av-tool/releases)
+[![Release](https://img.shields.io/github/release/CheerChen/better-av-tool.svg?label=Release)](https://github.com/CheerChen/better-av-tool/releases)
 
 ## 特性
 - 批量抓取资料和封面的影片刮削器
@@ -26,7 +28,7 @@ enable = true
 ```
 
 ## 支持来源
-- 通用番号（xxx-000）查询 DMM，搜索二次跳转获取的详情页，自动排除特典页面
+- 通用番号（xxx-000）查询 DMM
 - DMM 自有影片特征（xxx00000）
 - 支持 MGStage 部分特征番号（000xxx-000）（siro-000）
 - 支持 FC2 特征番号（fc2-000000/fc2-ppv-000000），并可查询部分已下架影片（通过 WebArchive 二次查询）
@@ -44,6 +46,3 @@ enable = true
 - 有
 - fc2 为了清晰度默认抓取内容的第一张图
 - dmm 来源自动切封面
-
-## 进度
-- 目前版本稳定了，没有重大bug不再更新~
