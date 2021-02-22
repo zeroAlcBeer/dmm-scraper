@@ -3,9 +3,12 @@ package scraper
 import (
 	"errors"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
+	"net/http"
 	"regexp"
 	"strings"
+	"time"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 const (
@@ -18,26 +21,28 @@ type DMMScraper struct {
 	//isArchive bool
 }
 
-// 获取刮削的内容
-func (s *DMMScraper) FetchDoc(query, url string) (err error) {
-	// 如果有url，就直接从url刮
-	if url != "" {
-		s.doc, err = GetDocFromUrl(url)
-		return err
+func (s *DMMScraper) Cookie() *http.Cookie {
+	return &http.Cookie{
+		Name:    "age_check_done",
+		Value:   "1",
+		Path:    "/",
+		Domain:  "dmm.co.jp",
+		Expires: time.Now().Add(1 * time.Hour),
 	}
+}
+
+// FetchDoc search once or twice to get a detail page
+func (s *DMMScraper) FetchDoc(query string) (err error) {
+	cookie = s.Cookie()
 
 	// dmm 搜索页
-	url = fmt.Sprintf(dmmSearchUrl, query)
-
-	s.doc, err = GetDocFromUrl(url)
+	s.doc, err = GetDocFromURL(fmt.Sprintf(dmmSearchUrl, query))
 	if err != nil {
 		return err
 	}
 	// 二次搜索
 	if s.doc.Find("#list li").Length() == 0 {
-		//log.Infof("fetching %s empty", s.doc.Text())
-		url = fmt.Sprintf(dmmSearchUrl2, query)
-		s.doc, err = GetDocFromUrl(url)
+		s.doc, err = GetDocFromURL(fmt.Sprintf(dmmSearchUrl2, query))
 		if err != nil {
 			return err
 		}
@@ -54,37 +59,16 @@ func (s *DMMScraper) FetchDoc(query, url string) (err error) {
 	// 多个结果时，取最短长度
 	var detail string
 	for _, href := range hrefs {
-		if CompareUrl2Query(href, query) {
+		if isURLMatchQuery(href, query) {
 			detail = href
 		}
 	}
 	if detail == "" {
-		return errors.New(fmt.Sprintf("unable to match in hrefs %v", hrefs))
+		return fmt.Errorf("unable to match in hrefs %v", hrefs)
 	}
 
-	s.doc, err = GetDocFromUrl(detail)
+	s.doc, err = GetDocFromURL(detail)
 	return err
-}
-
-func CompareUrl2Query(href, query string) bool {
-	var labelMatch bool
-	var numMatch bool
-	cid, _ := regexp.Compile(`cid=([^//]+)`)
-	cids := cid.FindStringSubmatch(href)
-	if len(cids) > 1 {
-		label1, number1 := GetLabelNumber(cids[1])
-		label2, number2 := GetLabelNumber(query)
-		//fmt.Println(label1, number1)
-		//fmt.Println(label2, number2)
-		if label1 == label2 {
-			labelMatch = true
-		}
-
-		if number1 == number2 {
-			numMatch = true
-		}
-	}
-	return labelMatch && numMatch
 }
 
 func (s *DMMScraper) GetPlot() string {

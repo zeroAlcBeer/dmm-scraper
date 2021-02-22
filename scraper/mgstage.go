@@ -2,9 +2,12 @@ package scraper
 
 import (
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
+	"net/http"
 	"regexp"
 	"strings"
+	"time"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 const (
@@ -12,20 +15,23 @@ const (
 )
 
 type MGStageScraper struct {
-	doc        *goquery.Document
+	doc *goquery.Document
 }
 
-func (s *MGStageScraper) FetchDoc(query, u string) (err error) {
-	if u != "" {
-		s.doc, err = GetDocFromUrl(u)
-		return err
+func (s *MGStageScraper) Cookie() *http.Cookie {
+	return &http.Cookie{
+		Name:    "adc",
+		Value:   "1",
+		Path:    "/",
+		Domain:  "mgstage.com",
+		Expires: time.Now().Add(1 * time.Hour),
 	}
-	//proxyClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-	//	return http.ErrUseLastResponse
-	//}
+}
 
-	u = fmt.Sprintf(mgstageDetailUrl, strings.ToUpper(query))
-	s.doc, err = GetDocFromUrl(u)
+func (s *MGStageScraper) FetchDoc(query string) (err error) {
+	cookie = s.Cookie()
+	u := fmt.Sprintf(mgstageDetailUrl, strings.ToUpper(query))
+	s.doc, err = GetDocFromURL(u)
 	return err
 }
 

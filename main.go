@@ -1,105 +1,47 @@
 package main
 
 import (
-	"better-av-tool/grabber"
-	"better-av-tool/log"
-	"better-av-tool/nfo"
 	"better-av-tool/scraper"
-	"context"
-	"crypto/tls"
-	"errors"
 	"fmt"
 	"io/ioutil"
-	"net"
-	"net/http"
-	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/viper"
-	"golang.org/x/net/proxy"
+	myclient "better-av-tool/internal/client"
+	"better-av-tool/internal/configs"
+	"better-av-tool/internal/img"
+	"better-av-tool/internal/logger"
+	"better-av-tool/internal/metadata"
 )
 
 var (
-	conf        Conf
-	outputPath  string
-	proxyClient *http.Client
+	conf         *configs.Configs
+	client       myclient.Client
+	imgOperation img.Operation
+	posterWidth  = 378
+	log          logger.Logger
+
+	outputPath string
 )
 
-type OutputConf struct {
-	Path string
-}
-
-type ProxyConf struct {
-	Enable bool
-	Socket string
-}
-
-type Conf struct {
-	Output OutputConf
-	Proxy  ProxyConf
-}
-
 func init() {
-	initConf()
-	initProxy()
-	initGrabber()
-	initScraper()
-}
+	log = logger.New()
 
-func initConf() {
-	viper.SetConfigName("config")
-	viper.AddConfigPath(".")
-	if err := viper.ReadInConfig(); err != nil {
+	var err error
+	conf, err = configs.NewLoader().LoadFile("config")
+	if err != nil {
 		log.Fatalf("Error reading config file, %s", err)
 	}
-	err := viper.Unmarshal(&conf)
-	if err != nil {
-		log.Fatalf("unable to decode into struct, %v", err)
-	}
-}
-
-func initProxy() {
-	proxyClient = &http.Client{}
+	client = myclient.New()
 	if conf.Proxy.Enable {
-		url, err := url.Parse(conf.Proxy.Socket)
-		if err != nil {
-			log.Fatal(err)
-		}
-		dialer, err := proxy.FromURL(url, proxy.Direct)
-		if err != nil {
-			log.Fatal(err)
-		}
-		proxyClient.Transport = &http.Transport{
-			DialContext: func(ctx context.Context, network, addr string) (conn net.Conn, e error) {
-				c, e := dialer.Dial(network, addr)
-				return c, e
-			},
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
+		client.SetProxyUrl(conf.Proxy.Socket)
 	}
-}
 
-func initGrabber() {
-	grabber.SetHTTPClient(proxyClient)
-}
+	imgOperation = img.NewOperation()
 
-func initScraper() {
-	scraper.SetHTTPClient(proxyClient)
-}
-
-func ensureDir(dirName string) error {
-	if _, err := os.Stat(dirName); err == nil {
-		return nil
-	}
-	err := os.MkdirAll(dirName, os.ModeDir)
-	if err == nil || os.IsExist(err) {
-		return nil
-	} else {
-		return err
-	}
+	scraper.Init(client, log)
 }
 
 func isValidVideo(ext string) bool {
@@ -115,9 +57,6 @@ func isValidVideo(ext string) bool {
 }
 
 func main() {
-	//if err := ensureDir(conf.Output.Path); err != nil {
-	//	log.Fatal(err)
-	//}
 
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
@@ -134,71 +73,64 @@ func main() {
 		log.Infof("Check file: %s", f.Name())
 		name := strings.TrimSuffix(f.Name(), ext)
 
-		var input string
-		//fmt.Print("Enter Detail url: ")
-		//fmt.Scanln(&input)
-
 		// 用正则处理文件名
 		if query, s := scraper.GetQuery(name); query != "" {
 			log.Infof("Scraper get query: %s", query)
 
 			// 爬取页面
-			err := s.FetchDoc(query, input)
+			err := s.FetchDoc(query)
 			if err != nil {
 				log.Error(err)
 				continue
 			}
 			log.Infof("Scraper get number: %s", s.GetNumber())
 			if s.GetNumber() == "" {
-				log.Error(errors.New("scraper get number empty"))
+				log.Error("scraper get number empty")
 				continue
 			}
 			num := scraper.FormatNum(s.GetNumber())
 			log.Infof("Scraper get num format: %s", num)
 
-
 			// 目录生成
-			outputPath = scraper.ParsePath(s, conf.Output.Path)
+			outputPath = metadata.NewOutputPath(s, conf.Output.Path)
 			log.Infof("Making output path: %s", outputPath)
-			err = ensureDir(outputPath)
-			if err != nil {
-				log.Error(err)
+			err = os.MkdirAll(outputPath, 0700)
+			if err != nil && !os.IsExist(err) {
+				log.Errorf("Making output path err: %s", err)
 				continue
 			}
+
 			// 做 nfo
-			model := nfo.Build(s, num)
+			m := metadata.NewMovieNfo(s)
 
 			// 下载封面
-			coverSrc, err := grabber.Download(s.GetCover())
+			poster := fmt.Sprintf("%s.jpg", num)
+			posterPath := path.Join(outputPath, poster)
+			err = client.Download(s.GetCover(), posterPath, myclient.DefaultProgress())
 			if err != nil {
 				log.Error(err)
 				continue
 			}
-			coverDst := path.Join(outputPath, fmt.Sprintf("%s.jpg", num))
-			_ = os.Rename(coverSrc, coverDst)
-			model.Fanart = []nfo.EmbyMovieThumb{{Thumb: path.Base(coverDst)}}
-			model.Poster = path.Base(coverDst)
+
+			m.SetPoster(poster)
 
 			// 封面裁剪
 			if s.NeedCut() {
-				posterDst := strings.Replace(coverDst, "jpg", "png", 1)
-				err = grabber.Crop(coverDst, posterDst)
+				err := imgOperation.CropAndSave(posterPath, posterPath, posterWidth, 0)
 				if err != nil {
 					log.Error(err)
-					continue
 				}
-				model.Poster = path.Base(posterDst)
 			}
 
 			// 写 nfo
-			nfoName := path.Join(outputPath, fmt.Sprintf("%s.nfo", num))
-			err = model.WriteFile(nfoName)
+			nfo := path.Join(outputPath, fmt.Sprintf("%s.nfo", num))
+			err = m.Save(nfo)
 			if err != nil {
 				log.Error(err)
 				continue
 			}
 
-			// 影片重命名
+			// 移动影片
 			videoName := strings.ToUpper(num) + filepath.Ext(f.Name())
 			err = os.Rename(f.Name(), path.Join(outputPath, videoName))
 			if err != nil {

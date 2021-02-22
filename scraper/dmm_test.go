@@ -19,7 +19,7 @@ func TestDMMScraper_FetchDoc(t *testing.T) {
 			if _, ok := dmmTests[tt.args.query]; !ok {
 				dmmTests[tt.args.query] = &DMMScraper{}
 			}
-			if err := dmmTests[tt.args.query].FetchDoc(tt.args.query, tt.args.url); (err != nil) != tt.wantErr {
+			if err := dmmTests[tt.args.query].FetchDoc(tt.args.query); (err != nil) != tt.wantErr {
 				t.Errorf("FetchDoc() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

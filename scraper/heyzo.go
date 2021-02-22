@@ -1,13 +1,13 @@
 package scraper
 
 import (
-	"better-av-tool/log"
 	"encoding/json"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
 	"html"
 	"regexp"
 	"strings"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 type HeyzoScraper struct {
@@ -63,15 +63,11 @@ type HeyzoData struct {
 	} `json:"aggregateRating"`
 }
 
-func (s *HeyzoScraper) FetchDoc(query, u string) (err error) {
-	if u != "" {
-		s.doc, err = GetDocFromUrl(u)
-		return err
-	}
+func (s *HeyzoScraper) FetchDoc(query string) (err error) {
 	s.movieId = regexp.MustCompile("[0-9]+").FindString(query)
 
-	u = fmt.Sprintf(heyzoDetailUrl, s.movieId)
-	s.doc, err = GetDocFromUrl(u)
+	u := fmt.Sprintf(heyzoDetailUrl, s.movieId)
+	s.doc, err = GetDocFromURL(u)
 	return err
 }
 

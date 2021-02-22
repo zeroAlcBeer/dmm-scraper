@@ -72,3 +72,24 @@ func FormatNum(s string) string {
 	}
 	return strings.ToUpper(l) + "-" + fmt.Sprintf("%03d", i)
 }
+
+func isURLMatchQuery(u, query string) bool {
+	var labelMatch bool
+	var numMatch bool
+	cid, _ := regexp.Compile(`cid=([^//]+)`)
+	cids := cid.FindStringSubmatch(u)
+	if len(cids) > 1 {
+		label1, number1 := GetLabelNumber(cids[1])
+		label2, number2 := GetLabelNumber(query)
+		//fmt.Println(label1, number1)
+		//fmt.Println(label2, number2)
+		if label1 == label2 {
+			labelMatch = true
+		}
+
+		if number1 == number2 {
+			numMatch = true
+		}
+	}
+	return labelMatch && numMatch
+}

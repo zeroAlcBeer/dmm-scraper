@@ -18,14 +18,9 @@ type GyuttoScraper struct {
 	doc *goquery.Document
 }
 
-func (s *GyuttoScraper) FetchDoc(query, u string) (err error) {
-	if u != "" {
-		s.doc, err = GetDocFromUrl(u)
-		return err
-	}
-
-	u = fmt.Sprintf(gyuttoSearchUrl, url.QueryEscape(query))
-	s.doc, err = GetDocFromUrl(u)
+func (s *GyuttoScraper) FetchDoc(query string) (err error) {
+	u := fmt.Sprintf(gyuttoSearchUrl, url.QueryEscape(query))
+	s.doc, err = GetDocFromURL(u)
 	if err != nil {
 		return err
 	}
@@ -39,7 +34,7 @@ func (s *GyuttoScraper) FetchDoc(query, u string) (err error) {
 		return errors.New("record not found")
 	}
 
-	s.doc, err = GetConvertDocFromUrl(hrefs[0])
+	s.doc, err = GetDocFromURL(hrefs[0])
 	if err != nil {
 		return err
 	}
