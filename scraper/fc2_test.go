@@ -26,7 +26,7 @@ func TestFc2Scraper_FetchDoc(t *testing.T) {
 			if _, ok := fc2Tests[tt.args.query]; !ok {
 				fc2Tests[tt.args.query] = &Fc2Scraper{}
 			}
-			if err := fc2Tests[tt.args.query].FetchDoc(tt.args.query, tt.args.url); (err != nil) != tt.wantErr {
+			if err := fc2Tests[tt.args.query].FetchDoc(tt.args.query); (err != nil) != tt.wantErr {
 				t.Errorf("Fc2Scraper.FetchDoc() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

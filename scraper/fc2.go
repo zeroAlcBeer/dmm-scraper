@@ -1,12 +1,12 @@
 package scraper
 
 import (
-	"better-av-tool/archive"
 	"encoding/json"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
 	"regexp"
 	"strings"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 type Fc2Scraper struct {
@@ -40,25 +40,19 @@ type FC2Image struct {
 	Type string `json:"@type"`
 }
 
-func (s *Fc2Scraper) FetchDoc(query, u string) (err error) {
-	if u != "" {
-		s.doc, err = GetDocFromUrl(u)
-		return err
-	}
+func (s *Fc2Scraper) FetchDoc(query string) (err error) {
 
-	u = fmt.Sprintf(fc2Url, query)
-	s.doc, err = GetDocFromUrl(u)
+	s.doc, err = GetDocFromURL(fmt.Sprintf(fc2Url, query))
 	if err != nil {
 		return err
 	}
 	if len(s.doc.Find(".items_notfound_header").Nodes) != 0 {
-		u = fmt.Sprintf(fc2Url2, query)
-		u, err = archive.GetAvailableUrl(u, proxyClient)
+		u, err := GetAvailableUrl(fmt.Sprintf(fc2Url2, query))
 		if err != nil {
 			return err
 		}
 		s.isArchive = true
-		s.doc, err = GetDocFromUrl(u)
+		s.doc, err = GetDocFromURL(u)
 	}
 	if err != nil {
 		return err
@@ -175,9 +169,9 @@ func (s *Fc2Scraper) GetPremiered() (rel string) {
 	if s.doc == nil {
 		return
 	}
-	if s.isArchive{
+	if s.isArchive {
 		rel = s.doc.Find("div[class=main_info_block] dl dd").Text()
-	}else{
+	} else {
 		rel = s.doc.Find(".items_article_Releasedate p").Text()
 	}
 	rel = regexp.MustCompile(`\d{4}\/(0?[1-9]|1[012])\/(0?[1-9]|[12][0-9]|3[01])`).FindString(rel)

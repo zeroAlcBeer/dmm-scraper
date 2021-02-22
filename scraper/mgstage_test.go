@@ -18,10 +18,10 @@ func TestMGStageScraper_FetchDoc(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if _, ok := mgsTests[tt.args.query]; !ok {
 				mgsTests[tt.args.query] = &MGStageScraper{
-					doc:        tt.fields.doc,
+					doc: tt.fields.doc,
 				}
 			}
-			if err := mgsTests[tt.args.query].FetchDoc(tt.args.query,tt.args.url); (err != nil) != tt.wantErr {
+			if err := mgsTests[tt.args.query].FetchDoc(tt.args.query); (err != nil) != tt.wantErr {
 				t.Errorf("FetchDoc() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
