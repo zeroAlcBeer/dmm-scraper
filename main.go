@@ -1,7 +1,6 @@
 package main
 
 import (
-	"better-av-tool/scraper"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"better-av-tool/internal/img"
 	"better-av-tool/internal/logger"
 	"better-av-tool/internal/metadata"
+	"better-av-tool/scraper"
 )
 
 var (
@@ -36,7 +36,10 @@ func init() {
 	}
 	client = myclient.New()
 	if conf.Proxy.Enable {
-		client.SetProxyUrl(conf.Proxy.Socket)
+		err = client.SetProxyUrl(conf.Proxy.Socket)
+		if err != nil {
+			log.Fatalf("Error load client proxy, %s", err)
+		}
 	}
 
 	imgOperation = img.NewOperation()
