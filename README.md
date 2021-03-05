@@ -1,13 +1,17 @@
 # better-av-tool
-[![Downloads](https://img.shields.io/github/downloads/CheerChen/better-av-tool/total.svg)](https://github.com/ouqiang/CheerChen/better-av-tool/releases)
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/CheerChen/better-av-tool)](https://goreportcard.com/report/github.com/CheerChen/better-av-tool)
+[![Downloads](https://img.shields.io/github/downloads/CheerChen/better-av-tool/total.svg)](https://github.com/CheerChen/better-av-tool/releases)
 [![Release](https://img.shields.io/github/release/CheerChen/better-av-tool.svg?label=Release)](https://github.com/CheerChen/better-av-tool/releases)
 
 ## 特性
+
 - 批量抓取资料和封面的影片刮削器
 - 以日站原始内容为主（DMM，MGStage，FC2等）
 - 优化了生成的 nfo 部分标签以更好适配 emby
 
 ## 基本用法
+
 - 移动程序到影片目录执行，程序会扫描查询*同目录*影片并生成影片的nfo文件以及封面
 - (新)生成的nfo文件和封面路径可以自定义了
 - 避免查询失败，建议配置`config.toml`中的代理地址
@@ -28,6 +32,7 @@ enable = true
 ```
 
 ## 支持来源
+
 - 通用番号（xxx-000）查询 DMM
 - DMM 自有影片特征（xxx00000）
 - 支持 MGStage 部分特征番号（000xxx-000）（siro-000）
@@ -36,13 +41,16 @@ enable = true
 - 支持 一些自制影片（S*x Friend/S*x Syndrome）
 
 ## 影片文件
+
 - 会一并移动并重命名
 - 有需要请注意备份
 
 ## nfo 生成
+
 - 目前只支持 emby （kodi 理论通用，未测试）
 
 ## 封面下载
+
 - 有
 - fc2 为了清晰度默认抓取内容的第一张图
 - dmm 来源自动切封面

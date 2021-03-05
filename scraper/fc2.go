@@ -53,9 +53,9 @@ func (s *Fc2Scraper) FetchDoc(query string) (err error) {
 		}
 		s.isArchive = true
 		s.doc, err = GetDocFromURL(u)
-	}
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 	if !s.isArchive {
 		err = getFc2Data(s)
