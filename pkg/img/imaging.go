@@ -12,7 +12,7 @@ type Imaging struct {
 
 // Crop ...
 func (i *Imaging) Crop(src image.Image, w, h int) (image.Image, error) {
-	return imaging.CropAnchor(src, w, h, imaging.TopLeft), nil
+	return imaging.CropAnchor(src, w, h, imaging.TopRight), nil
 }
 
 // Open ...

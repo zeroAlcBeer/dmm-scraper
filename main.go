@@ -8,16 +8,16 @@ import (
 	"path/filepath"
 	"strings"
 
-	myclient "better-av-tool/internal/client"
-	"better-av-tool/internal/configs"
-	"better-av-tool/internal/img"
-	"better-av-tool/internal/logger"
-	"better-av-tool/internal/metadata"
-	"better-av-tool/scraper"
+	myclient "better-av-tool/pkg/client"
+	"better-av-tool/pkg/config"
+	"better-av-tool/pkg/img"
+	"better-av-tool/pkg/logger"
+	"better-av-tool/pkg/metadata"
+	"better-av-tool/pkg/scraper"
 )
 
 var (
-	conf         *configs.Configs
+	conf         *config.Configs
 	client       myclient.Client
 	imgOperation img.Operation
 	posterWidth  = 378
@@ -30,7 +30,7 @@ func init() {
 	log = logger.New()
 
 	var err error
-	conf, err = configs.NewLoader().LoadFile("config")
+	conf, err = config.NewLoader().LoadFile("config")
 	if err != nil {
 		log.Fatalf("Error reading config file, %s", err)
 	}

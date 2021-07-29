@@ -1,4 +1,4 @@
-package configs
+package config
 
 // Output returns the configuration of output
 type Output struct {

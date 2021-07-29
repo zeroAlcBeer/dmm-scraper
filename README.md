@@ -38,7 +38,7 @@ enable = true
 - 支持 MGStage 部分特征番号（000xxx-000）（siro-000）
 - 支持 FC2 特征番号（fc2-000000/fc2-ppv-000000），并可查询部分已下架影片（通过 WebArchive 二次查询）
 - 支持 Heyzo 特征番号
-- 支持 一些自制影片（S*x Friend/S*x Syndrome）
+- <del>支持 一些自制影片（S*x Friend/S*x Syndrome)</del> 由于识别日文不稳定，去掉了
 
 ## 影片文件
 
@@ -51,6 +51,7 @@ enable = true
 
 ## 封面下载
 
-- 有
+- dmm 来源自动下载并切封面
+    - (新)修复了切图方向，改为从右边切
 - fc2 为了清晰度默认抓取内容的第一张图
-- dmm 来源自动切封面
+
