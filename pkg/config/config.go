@@ -16,3 +16,16 @@ type Configs struct {
 	Output Output
 	Proxy  Proxy
 }
+
+// Default ...
+func Default() *Configs {
+	return &Configs{
+		Output: Output{
+			Path: "output/{year}",
+		},
+		Proxy: Proxy{
+			Enable: false,
+			Socket: "",
+		},
+	}
+}

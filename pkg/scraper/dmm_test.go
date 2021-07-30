@@ -1,8 +1,7 @@
 package scraper
 
 import (
-	myclient "better-av-tool/pkg/client"
-	"better-av-tool/pkg/logger"
+	"better-av-tool/pkg/config"
 	"github.com/PuerkitoBio/goquery"
 	"testing"
 )
@@ -30,19 +29,17 @@ type testCase struct {
 	want    string
 }
 
-func Setup() {
+func BeforeTest() {
 	fc2Tests = make(map[string]*Fc2Scraper)
 	mgsTests = make(map[string]*MGStageScraper)
 	heyzoTests = make(map[string]*HeyzoScraper)
 	gyuttoTests = make(map[string]*GyuttoScraper)
 	dmmTests = make(map[string]*DMMScraper)
 
-	log = logger.New()
-
-	client = myclient.New()
-	client.SetProxyUrl("socks5://192.168.0.110:7891")
-
-	Init(client, log)
+	Setup(config.Proxy{
+		Enable: true,
+		Socket: "socks5://192.168.0.110:7891",
+	})
 }
 
 func TestDMMScraper_FetchDoc(t *testing.T) {

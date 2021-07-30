@@ -2,6 +2,7 @@ package scraper
 
 import (
 	myclient "better-av-tool/pkg/client"
+	"better-av-tool/pkg/config"
 	"better-av-tool/pkg/logger"
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
@@ -38,9 +39,16 @@ var (
 	cookie *http.Cookie
 )
 
-func Init(c myclient.Client, l logger.Logger) {
-	client = c
-	log = l
+// Setup ...
+func Setup(p config.Proxy) {
+	log = logger.New()
+	client = myclient.New()
+	if p.Enable {
+		err := client.SetProxyUrl(p.Socket)
+		if err != nil {
+			log.Errorf("Error parse proxy url, %s, proxy disabled", err)
+		}
+	}
 	cookie = &http.Cookie{}
 }
 
@@ -58,4 +66,9 @@ func GetDocFromURL(u string) (*goquery.Document, error) {
 	}
 	doc.Url = res.Request.URL
 	return doc, nil
+}
+
+// Download ...
+func Download(url, filename string, progress func(current, total int64)) error {
+	return client.Download(url, filename, progress)
 }

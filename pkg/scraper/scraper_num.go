@@ -14,7 +14,7 @@ func GetQuery(name string) (query string, s Scraper) {
 	typeSf, _ := regexp.Compile(`Sex\sFriend|webDL`)
 	typeHeyzo, _ := regexp.Compile(`(heyzo|HEYZO)-[0-9]{4}`)
 	typeFC2, _ := regexp.Compile(`(fc2|FC2|ppv|PPV)-[0-9]{6,7}`)
-	typeMGStage, _ := regexp.Compile(`(siro|SIRO|[0-9]{3,4}[a-zA-Z]{2,5})-[0-9]{3,4}`)
+	typeMGStage, _ := regexp.Compile(`(siro|SIRO|abw|ABW|[0-9]{3,4}[a-zA-Z]{2,5})-[0-9]{3,4}`)
 	typeDefault, _ := regexp.Compile(`[a-zA-Z]{2,5}(-|)[0-9]{3,5}`)
 
 	switch {

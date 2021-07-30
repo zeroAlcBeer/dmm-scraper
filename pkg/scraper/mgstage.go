@@ -154,5 +154,5 @@ func getMgstageTableValue(key string, doc *goquery.Document) (target *goquery.Se
 			}
 			return true
 		})
-	return
+	return doc.Find("~")
 }

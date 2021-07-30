@@ -5,7 +5,7 @@ import (
 )
 
 func TestGyuttoScraper_FetchDoc(t *testing.T) {
-	Setup()
+	//Setup()
 	tests := []struct {
 		name    string
 		fields  fields
