@@ -1,7 +1,7 @@
 package metadata
 
 import (
-	"better-av-tool/scraper"
+	"better-av-tool/pkg/scraper"
 	"encoding/xml"
 	"os"
 	"strings"

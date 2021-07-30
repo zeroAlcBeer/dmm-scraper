@@ -10,18 +10,14 @@ import (
 )
 
 func GetQuery(name string) (query string, s Scraper) {
-	typeSyndrome, _ := regexp.Compile(`Sex\sSyndrome`)
+	//typeSyndrome, _ := regexp.Compile(`Sex\sSyndrome`)
 	typeSf, _ := regexp.Compile(`Sex\sFriend|webDL`)
 	typeHeyzo, _ := regexp.Compile(`(heyzo|HEYZO)-[0-9]{4}`)
 	typeFC2, _ := regexp.Compile(`(fc2|FC2|ppv|PPV)-[0-9]{6,7}`)
-	typeMGStage, _ := regexp.Compile(`(siro|SIRO|[0-9]{3,4}[a-zA-Z]{2,5})-[0-9]{3,4}`)
+	typeMGStage, _ := regexp.Compile(`(siro|SIRO|abw|ABW|[0-9]{3,4}[a-zA-Z]{2,5})-[0-9]{3,4}`)
 	typeDefault, _ := regexp.Compile(`[a-zA-Z]{2,5}(-|)[0-9]{3,5}`)
 
 	switch {
-	case typeSyndrome.MatchString(name):
-		jaChars := regexp.MustCompile("/[一-龠]+|[ぁ-ゔ]+|[ァ-ヴー]+|[々〆〤]+/u").FindAllString(name, -1)
-		query = strings.Join(jaChars, " ")
-		s = &GyuttoScraper{}
 	case typeSf.MatchString(name):
 		query = name
 		s = &GyuttoScraper{}

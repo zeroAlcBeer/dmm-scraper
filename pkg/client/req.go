@@ -14,7 +14,10 @@ type ReqClient struct {
 // Get ...
 func (rc *ReqClient) Get(url string, v ...interface{}) (*http.Response, error) {
 	r, err := rc.Req.Get(url, v...)
-	return r.Response(), err
+	if err != nil {
+		return nil, err
+	}
+	return r.Response(), nil
 }
 
 // GetJSON ...

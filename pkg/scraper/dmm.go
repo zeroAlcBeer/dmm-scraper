@@ -36,6 +36,9 @@ func (s *DMMScraper) FetchDoc(query string) (err error) {
 	cookie = s.Cookie()
 
 	// dmm 搜索页
+	if strings.Contains(query, "-") {
+		query = strings.Replace(query, "-", "00", 1)
+	}
 	s.doc, err = GetDocFromURL(fmt.Sprintf(dmmSearchUrl, query))
 	if err != nil {
 		return err

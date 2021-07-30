@@ -1,4 +1,4 @@
-package configs
+package config
 
 // Output returns the configuration of output
 type Output struct {
@@ -15,4 +15,17 @@ type Proxy struct {
 type Configs struct {
 	Output Output
 	Proxy  Proxy
+}
+
+// Default ...
+func Default() *Configs {
+	return &Configs{
+		Output: Output{
+			Path: "output/{year}",
+		},
+		Proxy: Proxy{
+			Enable: false,
+			Socket: "",
+		},
+	}
 }
