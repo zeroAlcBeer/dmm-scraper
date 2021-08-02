@@ -6,7 +6,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/imroc/req v0.3.0
-	github.com/sirupsen/logrus v1.2.0
+	github.com/kataras/golog v0.1.7
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.4.0 // indirect

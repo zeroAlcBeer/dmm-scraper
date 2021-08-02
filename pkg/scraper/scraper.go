@@ -1,9 +1,11 @@
 package scraper
 
 import (
+	"better-av-tool/pkg/archive"
 	myclient "better-av-tool/pkg/client"
 	"better-av-tool/pkg/config"
 	"better-av-tool/pkg/logger"
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
 )
@@ -71,4 +73,15 @@ func GetDocFromURL(u string) (*goquery.Document, error) {
 // Download ...
 func Download(url, filename string, progress func(current, total int64)) error {
 	return client.Download(url, filename, progress)
+}
+
+func GetAvailableUrl(orginUrl string) (string, error) {
+
+	resp := &archive.AvailableResp{}
+	err := client.GetJSON(fmt.Sprintf(archive.GetAvailableUrl, orginUrl), resp)
+	if err != nil {
+		return "", err
+	}
+
+	return resp.ArchivedSnapshots.Closest.URL, nil
 }

@@ -1,4 +1,3 @@
 .idea
 .vscode
-*.exe
-better-av-tool
+bin/*

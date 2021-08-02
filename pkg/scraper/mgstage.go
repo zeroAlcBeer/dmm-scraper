@@ -146,6 +146,7 @@ func (s *MGStageScraper) NeedCut() bool {
 }
 
 func getMgstageTableValue(key string, doc *goquery.Document) (target *goquery.Selection) {
+	target = doc.Find("~")
 	doc.Find("div[class=detail_data] table").Last().Find("tr").EachWithBreak(
 		func(i int, s *goquery.Selection) bool {
 			if strings.Contains(s.Text(), key) {
@@ -154,5 +155,5 @@ func getMgstageTableValue(key string, doc *goquery.Document) (target *goquery.Se
 			}
 			return true
 		})
-	return doc.Find("~")
+	return
 }

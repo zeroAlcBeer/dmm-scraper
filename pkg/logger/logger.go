@@ -1,9 +1,7 @@
 package logger
 
 import (
-	"os"
-
-	"github.com/sirupsen/logrus"
+	"github.com/kataras/golog"
 )
 
 // Logger interface defines all the logging methods to be implemented
@@ -21,12 +19,5 @@ type Logger interface {
 
 // New returns a new instance of Logger
 func New() Logger {
-	return &LogrusLogger{
-		&logrus.Logger{
-			Out:       os.Stdout,
-			Formatter: new(logrus.JSONFormatter),
-			Hooks:     make(logrus.LevelHooks),
-			Level:     logrus.DebugLevel,
-		},
-	}
+	return golog.New()
 }

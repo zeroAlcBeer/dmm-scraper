@@ -57,7 +57,8 @@ enable = true
 
 ## Changelog
 
-*    **7 Aug 2021 (v1.3.0)** : 修复切封面方向；由于识别日文不稳定不再支持 Sx Syndrome 刮削
+*    **2 Aug 2021 (v1.3.1)** : 修复 mgstage 查询失败问题；替换（logrus=>golog）
+*    **30 Jul 2021 (v1.3.0)** : 修复切封面方向；由于识别日文不稳定不再支持 Sx Syndrome 刮削
 *    **5 Mar 2021 (v1.2.1)** : 重构包；替换多个基础库（grab=>req, cutter=>imaging）
 *    **7 Aug 2020 (v1.1.0)** : 标题格式正规化为大写番号，便于 emby 搜索；提高 DMM 多个搜索结果时正确率
 *    **14 Jul 2020 (v1.0.1)** : 修复 DMM 查询失败的问题（需要年龄确认）
