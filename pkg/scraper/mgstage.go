@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dlclark/regexp2"
+
 	"github.com/PuerkitoBio/goquery"
 )
 
@@ -15,24 +17,23 @@ const (
 )
 
 type MGStageScraper struct {
-	doc *goquery.Document
+	DefaultScraper
 }
 
-func (s *MGStageScraper) Cookie() *http.Cookie {
-	return &http.Cookie{
+func (s *MGStageScraper) GetType() string {
+	return "MGStageScraper"
+}
+
+func (s *MGStageScraper) FetchDoc(query string) (err error) {
+	s.cookie = &http.Cookie{
 		Name:    "adc",
 		Value:   "1",
 		Path:    "/",
 		Domain:  "mgstage.com",
 		Expires: time.Now().Add(1 * time.Hour),
 	}
-}
-
-func (s *MGStageScraper) FetchDoc(query string) (err error) {
-	cookie = s.Cookie()
 	u := fmt.Sprintf(mgstageDetailUrl, strings.ToUpper(query))
-	s.doc, err = GetDocFromURL(u)
-	return err
+	return s.GetDocFromURL(u)
 }
 
 func (s *MGStageScraper) GetPlot() string {
@@ -115,10 +116,6 @@ func (s *MGStageScraper) GetCover() string {
 	return u
 }
 
-func (s *MGStageScraper) GetWebsite() string {
-	return s.doc.Url.String()
-}
-
 func (s *MGStageScraper) GetPremiered() (rel string) {
 	if s.doc == nil {
 		return ""
@@ -141,8 +138,10 @@ func (s *MGStageScraper) GetSeries() string {
 	return strings.TrimSpace(getMgstageTableValue("シリーズ", s.doc).Find("td").Text())
 }
 
-func (s *MGStageScraper) NeedCut() bool {
-	return false
+func (s *MGStageScraper) GetFormatNumber() string {
+	typeMGStage, _ := regexp2.Compile(`([0-9]{3,4}|)[a-zA-Z]{2,5}-[0-9]{3,5}`, 0)
+	match, _ := typeMGStage.FindStringMatch(s.GetNumber())
+	return strings.ToUpper(match.String())
 }
 
 func getMgstageTableValue(key string, doc *goquery.Document) (target *goquery.Selection) {

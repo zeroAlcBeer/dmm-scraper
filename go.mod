@@ -5,6 +5,7 @@ go 1.12
 require (
 	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/disintegration/imaging v1.6.2
+	github.com/dlclark/regexp2 v1.4.0
 	github.com/imroc/req v0.3.0
 	github.com/kataras/golog v0.1.7
 	github.com/spf13/afero v1.2.2 // indirect

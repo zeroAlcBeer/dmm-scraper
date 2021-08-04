@@ -11,13 +11,17 @@ import (
 )
 
 type HeyzoScraper struct {
-	doc     *goquery.Document
+	DefaultScraper
 	movieId string
 }
 
 const (
 	heyzoDetailUrl = "https://www.heyzo.com/moviepages/%s/index.html"
 )
+
+func (s *HeyzoScraper) GetType() string {
+	return "HeyzoScraper"
+}
 
 type HeyzoData struct {
 	Context  string `json:"@context"`
@@ -67,8 +71,7 @@ func (s *HeyzoScraper) FetchDoc(query string) (err error) {
 	s.movieId = regexp.MustCompile("[0-9]+").FindString(query)
 
 	u := fmt.Sprintf(heyzoDetailUrl, s.movieId)
-	s.doc, err = GetDocFromURL(u)
-	return err
+	return s.GetDocFromURL(u)
 }
 
 func (s *HeyzoScraper) GetPlot() string {
@@ -130,7 +133,11 @@ func (s *HeyzoScraper) GetLabel() string {
 }
 
 func (s *HeyzoScraper) GetNumber() string {
-	return "heyzo" + s.movieId
+	return s.movieId
+}
+
+func (s *HeyzoScraper) GetFormatNumber() string {
+	return strings.ToUpper(fmt.Sprintf("heyzo-%s", s.GetNumber()))
 }
 
 func (s *HeyzoScraper) GetCover() string {
@@ -145,10 +152,6 @@ func (s *HeyzoScraper) GetCover() string {
 		log.Error(err)
 	}
 	return strings.ReplaceAll(d.Image, "//", "https://")
-}
-
-func (s *HeyzoScraper) GetWebsite() string {
-	return s.doc.Url.String()
 }
 
 func (s *HeyzoScraper) GetPremiered() (rel string) {
@@ -175,8 +178,4 @@ func (s *HeyzoScraper) GetSeries() string {
 		return ""
 	}
 	return strings.TrimSpace(p)
-}
-
-func (s *HeyzoScraper) NeedCut() bool {
-	return false
 }

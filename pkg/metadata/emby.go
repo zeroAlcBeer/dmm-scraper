@@ -3,8 +3,8 @@ package metadata
 import (
 	"better-av-tool/pkg/scraper"
 	"encoding/xml"
+	"fmt"
 	"os"
-	"strings"
 )
 
 type EmbyMovie struct {
@@ -62,6 +62,10 @@ func (m *EmbyMovie) SetPoster(filename string) {
 	m.Poster = filename
 }
 
+func (m *EmbyMovie) SetTitle(formatNum string) {
+	m.Title = fmt.Sprintf("%s %s", formatNum, m.Title)
+}
+
 func newEmbyMovieActors(names []string) []EmbyMovieActor {
 	var actors []EmbyMovieActor
 	for _, name := range names {
@@ -90,17 +94,4 @@ func NewMovieNfo(s scraper.Scraper) MovieNfo {
 		//Fanart:    []EmbyMovieThumb{{Thumb: cover}},
 		//Poster:    "",
 	}
-}
-
-func NewOutputPath(s scraper.Scraper, format string) string {
-	p := strings.Replace(format, "{year}", s.GetYear(), 1)
-	if len(s.GetActors()) > 0 {
-		p = strings.Replace(p, "{actor}", s.GetActors()[0], 1)
-	} else {
-		p = strings.Replace(p, "{actor}", "", 1)
-	}
-	p = strings.Replace(p, "{maker}", s.GetMaker(), 1)
-	p = strings.Replace(p, "{num}", s.GetNumber(), 1)
-
-	return strings.Replace(p, "//", "/", -1)
 }
