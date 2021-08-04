@@ -29,9 +29,7 @@ func TestHeyzoScraper_FetchDoc(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if _, ok := heyzoTests[tt.args.query]; !ok {
-				heyzoTests[tt.args.query] = &HeyzoScraper{
-					doc: tt.fields.doc,
-				}
+				heyzoTests[tt.args.query] = &HeyzoScraper{}
 			}
 			if err := heyzoTests[tt.args.query].FetchDoc(tt.args.query); (err != nil) != tt.wantErr {
 				t.Errorf("HeyzoScraper.FetchDoc() error = %v, wantErr %v", err, tt.wantErr)

@@ -33,9 +33,9 @@ enable = true
 
 ## 支持来源
 
-- 通用番号（xxx-000）查询 DMM
-- DMM 自有影片特征（xxx00000）
-- 支持 MGStage 部分特征番号（000xxx-000）（siro-000）
+- 通用番号（xxx-000）依次查询 DMM，Fanza，MGStage
+- 支持 DMM 自有影片特征番号（xxx00000）
+- 支持 MGStage 部分特征番号（000xxx-000）
 - 支持 FC2 特征番号（fc2-000000/fc2-ppv-000000），并可查询部分已下架影片（通过 WebArchive 二次查询）
 - 支持 Heyzo 特征番号
 - <del>支持 一些自制影片（S*x Friend/S*x Syndrome)</del>
@@ -57,6 +57,7 @@ enable = true
 
 ## Changelog
 
+*    **5 Aug 2021 (v1.3.3)** : 修复标题番号缺失问题；重构 Scraper 包；改良输出日志
 *    **2 Aug 2021 (v1.3.1)** : 修复 mgstage 查询失败问题；替换（logrus=>golog）
 *    **30 Jul 2021 (v1.3.0)** : 修复切封面方向；由于识别日文不稳定不再支持 Sx Syndrome 刮削
 *    **5 Mar 2021 (v1.2.1)** : 重构包；替换多个基础库（grab=>req, cutter=>imaging）

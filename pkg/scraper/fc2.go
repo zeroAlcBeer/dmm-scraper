@@ -10,9 +10,12 @@ import (
 )
 
 type Fc2Scraper struct {
-	doc       *goquery.Document
-	fc2data   *FC2Data
-	isArchive bool
+	DefaultScraper
+	fc2data *FC2Data
+}
+
+func (s *Fc2Scraper) GetType() string {
+	return "Fc2Scraper"
 }
 
 const (
@@ -42,17 +45,18 @@ type FC2Image struct {
 
 func (s *Fc2Scraper) FetchDoc(query string) (err error) {
 
-	s.doc, err = GetDocFromURL(fmt.Sprintf(fc2Url, query))
+	err = s.GetDocFromURL(fmt.Sprintf(fc2Url, query))
 	if err != nil {
 		return err
 	}
 	if len(s.doc.Find(".items_notfound_header").Nodes) != 0 {
-		u, err := GetAvailableUrl(fmt.Sprintf(fc2Url2, query))
+		var u string
+		u, err = s.GetAvailableUrl(fmt.Sprintf(fc2Url2, query))
 		if err != nil {
 			return err
 		}
 		s.isArchive = true
-		s.doc, err = GetDocFromURL(u)
+		err = s.GetDocFromURL(u)
 		if err != nil {
 			return err
 		}
@@ -133,10 +137,6 @@ func (s *Fc2Scraper) GetActors() []string {
 	return []string{}
 }
 
-func (s *Fc2Scraper) GetLabel() string {
-	return ""
-}
-
 func (s *Fc2Scraper) GetNumber() string {
 	if s.doc == nil {
 		return ""
@@ -161,10 +161,6 @@ func (s *Fc2Scraper) GetCover() string {
 	return s.fc2data.Image.URL
 }
 
-func (s *Fc2Scraper) GetWebsite() string {
-	return s.doc.Url.String()
-}
-
 func (s *Fc2Scraper) GetPremiered() (rel string) {
 	if s.doc == nil {
 		return
@@ -185,12 +181,8 @@ func (s *Fc2Scraper) GetYear() (rel string) {
 	return regexp.MustCompile(`\d{4}`).FindString(s.GetPremiered())
 }
 
-func (s *Fc2Scraper) GetSeries() string {
-	return ""
-}
-
-func (s *Fc2Scraper) NeedCut() bool {
-	return false
+func (s *Fc2Scraper) GetFormatNumber() string {
+	return strings.ToUpper(fmt.Sprintf("fc2-%s", s.GetNumber()))
 }
 
 func getFc2Data(s *Fc2Scraper) error {

@@ -15,12 +15,16 @@ const (
 )
 
 type GyuttoScraper struct {
-	doc *goquery.Document
+	DefaultScraper
+}
+
+func (s *GyuttoScraper) GetType() string {
+	return "GyuttoScraper"
 }
 
 func (s *GyuttoScraper) FetchDoc(query string) (err error) {
 	u := fmt.Sprintf(gyuttoSearchUrl, url.QueryEscape(query))
-	s.doc, err = GetDocFromURL(u)
+	err = s.GetDocFromURL(u)
 	if err != nil {
 		return err
 	}
@@ -34,7 +38,7 @@ func (s *GyuttoScraper) FetchDoc(query string) (err error) {
 		return errors.New("record not found")
 	}
 
-	s.doc, err = GetDocFromURL(hrefs[0])
+	err = s.GetDocFromURL(hrefs[0])
 	if err != nil {
 		return err
 	}
@@ -88,10 +92,6 @@ func (s *GyuttoScraper) GetActors() (actors []string) {
 	return
 }
 
-func (s *GyuttoScraper) GetLabel() string {
-	return ""
-}
-
 func (s *GyuttoScraper) GetNumber() string {
 	if s.doc == nil {
 		return ""
@@ -100,19 +100,16 @@ func (s *GyuttoScraper) GetNumber() string {
 	return nums[len(nums)-1]
 }
 
+func (s *GyuttoScraper) GetFormatNumber() string {
+	return strings.ToUpper(fmt.Sprintf("gyutto-%s", s.GetNumber()))
+}
+
 func (s *GyuttoScraper) GetCover() string {
 	if s.doc == nil {
 		return ""
 	}
 	img, _ := s.doc.Find(".highslide").First().Attr("href")
 	return "http://image.gyutto.com" + img
-}
-
-func (s *GyuttoScraper) GetWebsite() string {
-	if s.doc == nil {
-		return ""
-	}
-	return s.doc.Url.String()
 }
 
 func (s *GyuttoScraper) GetPremiered() (rel string) {
@@ -132,12 +129,4 @@ func (s *GyuttoScraper) GetYear() (rel string) {
 		return ""
 	}
 	return regexp.MustCompile(`\d{4}`).FindString(s.GetPremiered())
-}
-
-func (s *GyuttoScraper) GetSeries() string {
-	return ""
-}
-
-func (s *GyuttoScraper) NeedCut() bool {
-	return false
 }

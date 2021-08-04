@@ -19,9 +19,7 @@ func TestMGStageScraper_FetchDoc(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if _, ok := mgsTests[tt.args.query]; !ok {
-				mgsTests[tt.args.query] = &MGStageScraper{
-					doc: tt.fields.doc,
-				}
+				mgsTests[tt.args.query] = &MGStageScraper{}
 			}
 			if err := mgsTests[tt.args.query].FetchDoc(tt.args.query); (err != nil) != tt.wantErr {
 				t.Errorf("FetchDoc() error = %v, wantErr %v", err, tt.wantErr)

@@ -12,19 +12,19 @@ import (
 )
 
 const (
-	dmmMonoSearchUrl = "https://www.dmm.co.jp/mono/dvd/-/search/=/searchstr=%s/"
+	dmmDigitalSearchUrl = "https://www.dmm.co.jp/digital/-/list/search/=/?searchstr=%s"
 )
 
-type DMMScraper struct {
+type FanzaScraper struct {
 	DefaultScraper
 }
 
-func (s *DMMScraper) GetType() string {
-	return "DMMScraper"
+func (s *FanzaScraper) GetType() string {
+	return "FanzaScraper"
 }
 
 // FetchDoc search once or twice to get a detail page
-func (s *DMMScraper) FetchDoc(query string) (err error) {
+func (s *FanzaScraper) FetchDoc(query string) (err error) {
 	s.cookie = &http.Cookie{
 		Name:    "age_check_done",
 		Value:   "1",
@@ -32,11 +32,12 @@ func (s *DMMScraper) FetchDoc(query string) (err error) {
 		Domain:  "dmm.co.jp",
 		Expires: time.Now().Add(1 * time.Hour),
 	}
+
 	// dmm 搜索页
 	if strings.Contains(query, "-") {
 		query = strings.Replace(query, "-", "00", 1)
 	}
-	err = s.GetDocFromURL(fmt.Sprintf(dmmMonoSearchUrl, query))
+	err = s.GetDocFromURL(fmt.Sprintf(dmmDigitalSearchUrl, query))
 	if err != nil {
 		return err
 	}
@@ -50,7 +51,7 @@ func (s *DMMScraper) FetchDoc(query string) (err error) {
 	if len(hrefs) == 0 {
 		return errors.New("record not found")
 	}
-
+	// 多个结果时，取最短长度
 	var detail string
 	for _, href := range hrefs {
 		if isURLMatchQuery(href, query) {
@@ -64,7 +65,7 @@ func (s *DMMScraper) FetchDoc(query string) (err error) {
 	return s.GetDocFromURL(detail)
 }
 
-func (s *DMMScraper) GetPlot() string {
+func (s *FanzaScraper) GetPlot() string {
 	if s.doc == nil {
 		return ""
 	}
@@ -72,28 +73,28 @@ func (s *DMMScraper) GetPlot() string {
 	return strings.TrimSpace(tempDoc.Children().Remove().End().Text())
 }
 
-func (s *DMMScraper) GetTitle() string {
+func (s *FanzaScraper) GetTitle() string {
 	if s.doc == nil {
 		return ""
 	}
 	return s.doc.Find("#title").Text()
 }
 
-func (s *DMMScraper) GetDirector() string {
+func (s *FanzaScraper) GetDirector() string {
 	if s.doc == nil {
 		return ""
 	}
 	return getDmmTableValue("監督", s.doc)
 }
 
-func (s *DMMScraper) GetRuntime() string {
+func (s *FanzaScraper) GetRuntime() string {
 	if s.doc == nil {
 		return ""
 	}
 	return getDmmTableValue("収録時間", s.doc)
 }
 
-func (s *DMMScraper) GetTags() (tags []string) {
+func (s *FanzaScraper) GetTags() (tags []string) {
 	if s.doc == nil {
 		return
 	}
@@ -110,14 +111,14 @@ func (s *DMMScraper) GetTags() (tags []string) {
 	return
 }
 
-func (s *DMMScraper) GetMaker() string {
+func (s *FanzaScraper) GetMaker() string {
 	if s.doc == nil {
 		return ""
 	}
 	return getDmmTableValue("メーカー", s.doc)
 }
 
-func (s *DMMScraper) GetActors() (actors []string) {
+func (s *FanzaScraper) GetActors() (actors []string) {
 	if s.doc == nil {
 		return
 	}
@@ -127,21 +128,21 @@ func (s *DMMScraper) GetActors() (actors []string) {
 	return
 }
 
-func (s *DMMScraper) GetLabel() string {
+func (s *FanzaScraper) GetLabel() string {
 	if s.doc == nil {
 		return ""
 	}
 	return getDmmTableValue("レーベル", s.doc)
 }
 
-func (s *DMMScraper) GetNumber() string {
+func (s *FanzaScraper) GetNumber() string {
 	if s.doc == nil {
 		return ""
 	}
 	return getDmmTableValue("品番", s.doc)
 }
 
-func (s *DMMScraper) GetFormatNumber() string {
+func (s *FanzaScraper) GetFormatNumber() string {
 	l, i := GetLabelNumber(s.GetNumber())
 	if l == "" {
 		return fmt.Sprintf("%03d", i)
@@ -149,7 +150,7 @@ func (s *DMMScraper) GetFormatNumber() string {
 	return strings.ToUpper(fmt.Sprintf("%s-%03d", l, i))
 }
 
-func (s *DMMScraper) GetCover() string {
+func (s *FanzaScraper) GetCover() string {
 	if s.doc == nil {
 		return ""
 	}
@@ -168,7 +169,7 @@ func (s *DMMScraper) GetCover() string {
 	return img
 }
 
-func (s *DMMScraper) GetPremiered() (rel string) {
+func (s *FanzaScraper) GetPremiered() (rel string) {
 	if s.doc == nil {
 		return ""
 	}
@@ -179,44 +180,20 @@ func (s *DMMScraper) GetPremiered() (rel string) {
 	return strings.Replace(rel, "/", "-", -1)
 }
 
-func (s *DMMScraper) GetYear() (rel string) {
+func (s *FanzaScraper) GetYear() (rel string) {
 	if s.doc == nil {
 		return ""
 	}
 	return regexp.MustCompile(`\d{4}`).FindString(s.GetPremiered())
 }
 
-func (s *DMMScraper) GetSeries() string {
+func (s *FanzaScraper) GetSeries() string {
 	if s.doc == nil {
 		return ""
 	}
 	return getDmmTableValue("シリーズ", s.doc)
 }
 
-func (s *DMMScraper) NeedCut() bool {
+func (s *FanzaScraper) NeedCut() bool {
 	return true
-}
-
-func getDmmTableValue(key string, doc *goquery.Document) (val string) {
-	doc.Find("table[class=mg-b20] tr").EachWithBreak(
-		func(i int, s *goquery.Selection) bool {
-			if strings.Contains(s.Text(), key) {
-				val = s.Find("td a").Text()
-				if val == "" {
-					val = s.Find("td").Last().Text()
-				}
-				if val == "----" {
-					val = ""
-				}
-				val = strings.TrimSpace(val)
-				return false
-			}
-			return true
-		})
-	return
-}
-
-func getDmmTableValue2(x int, doc *goquery.Document) (val string) {
-	//log.Info(doc.Find("table[class=mg-b20] td[width]").Html())
-	return doc.Find("table[class=mg-b20] td").Eq(x - 1).Text()
 }

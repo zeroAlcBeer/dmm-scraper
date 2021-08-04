@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	myclient "better-av-tool/pkg/client"
 	"better-av-tool/pkg/config"
 	"better-av-tool/pkg/img"
 	"better-av-tool/pkg/logger"
@@ -18,7 +17,6 @@ import (
 
 var (
 	posterWidth = 378
-	outputPath string
 )
 
 func isValidVideo(ext string) bool {
@@ -31,6 +29,12 @@ func isValidVideo(ext string) bool {
 		return true
 	}
 	return false
+}
+
+func MyProgress(l logger.Logger, sType, filename string) func(current, total int64) {
+	return func(current, total int64) {
+		l.Infof(fmt.Sprintf("%s downloading %s ... %f%%", sType, filename, float32(current)/float32(total)*100))
+	}
 }
 
 func main() {
@@ -62,68 +66,72 @@ func main() {
 		name := strings.TrimSuffix(f.Name(), ext)
 
 		// 用正则处理文件名
-		if query, s := scraper.GetQuery(name); query != "" {
-			log.Infof("Scraper get query: %s", query)
+		if query, scrapers := scraper.GetQuery(name); query != "" {
 
-			// 爬取页面
-			err = s.FetchDoc(query)
-			if err != nil {
-				log.Error(err)
-				continue
-			}
-			log.Infof("Scraper get number: %s", s.GetNumber())
-			if s.GetNumber() == "" {
-				log.Error("scraper get number empty")
-				continue
-			}
-			num := scraper.FormatNum(s.GetNumber())
-			log.Infof("Scraper get num format: %s", num)
+			for _, s := range scrapers {
+				log.Infof("%s capturing query: %s", s.GetType(), query)
 
-			// mkdir
-			outputPath = metadata.NewOutputPath(s, conf.Output.Path)
-			log.Infof("Making output path: %s", outputPath)
-			err = os.MkdirAll(outputPath, 0700)
-			if err != nil && !os.IsExist(err) {
-				log.Errorf("Making output path err: %s", err)
-				continue
-			}
+				// fetch
+				err = s.FetchDoc(query)
+				if err != nil {
+					log.Error(err)
+					continue
+				}
 
-			// build nfo
-			m := metadata.NewMovieNfo(s)
+				if s.GetNumber() == "" {
+					log.Errorf("%s get num empty", s.GetType())
+					continue
+				}
 
-			// download cover
-			poster := fmt.Sprintf("%s.jpg", num)
-			posterPath := path.Join(outputPath, poster)
-			err = scraper.Download(s.GetCover(), posterPath, myclient.DefaultProgress())
-			if err != nil {
-				log.Error(err)
-				continue
-			}
+				num := s.GetFormatNumber()
+				log.Infof("%s get num %s format: %s", s.GetType(), s.GetNumber(), num)
 
-			m.SetPoster(poster)
+				// mkdir
+				outputPath := scraper.GetOutputPath(s, conf.Output.Path)
+				log.Infof("%s making output path: %s", s.GetType(), outputPath)
+				err = os.MkdirAll(outputPath, 0700)
+				if err != nil && !os.IsExist(err) {
+					log.Error(err)
+					break
+				}
 
-			// cut cover
-			if s.NeedCut() {
-				imgOperation := img.NewOperation()
-				err = imgOperation.CropAndSave(posterPath, posterPath, posterWidth, 0)
+				// build nfo
+				movieNfo := metadata.NewMovieNfo(s)
+				poster := fmt.Sprintf("%s.jpg", num)
+				movieNfo.SetPoster(poster)
+				movieNfo.SetTitle(num)
+
+				posterPath := path.Join(outputPath, poster)
+				err = scraper.Download(s.GetCover(), posterPath, MyProgress(log, s.GetType(), poster))
+				if err != nil {
+					log.Error(err)
+					break
+				}
+
+				if s.NeedCut() {
+					log.Infof("%s cropping poster: %s", s.GetType(), posterPath)
+					imgOperation := img.NewOperation()
+					err = imgOperation.CropAndSave(posterPath, posterPath, posterWidth, 0)
+					if err != nil {
+						log.Error(err)
+					}
+				}
+
+				nfo := path.Join(outputPath, fmt.Sprintf("%s.nfo", num))
+				log.Infof("%s writing nfo file: %s", s.GetType(), nfo)
+				err = movieNfo.Save(nfo)
+				if err != nil {
+					log.Error(err)
+					break
+				}
+
+				newPath := path.Join(outputPath, num+filepath.Ext(f.Name()))
+				log.Infof("%s moving video file: %s", s.GetType(), newPath)
+				err = os.Rename(f.Name(), newPath)
 				if err != nil {
 					log.Error(err)
 				}
-			}
-
-			// write nfo file
-			nfo := path.Join(outputPath, fmt.Sprintf("%s.nfo", num))
-			err = m.Save(nfo)
-			if err != nil {
-				log.Error(err)
-				continue
-			}
-
-			// move file
-			videoName := strings.ToUpper(num) + filepath.Ext(f.Name())
-			err = os.Rename(f.Name(), path.Join(outputPath, videoName))
-			if err != nil {
-				log.Error(err)
+				break
 			}
 		}
 	}
