@@ -12,8 +12,8 @@ import (
 
 func GetQuery(name string) (query string, scrapers []Scraper) {
 	//typeSyndrome, _ := regexp.Compile(`Sex\sSyndrome`)
-	typeSF, _ := regexp2.Compile(`Sex\sFriend|webDL`, 0)
-	isSF, _ := typeSF.MatchString(name)
+	typeSyndrome, _ := regexp2.Compile(`item[0-9]{6,7}`, 0)
+	isSF, _ := typeSyndrome.MatchString(name)
 	typeHeyzo, _ := regexp2.Compile(`(heyzo|HEYZO)-[0-9]{4}`, 0)
 	isHeyzo, _ := typeHeyzo.MatchString(name)
 	typeFC2, _ := regexp2.Compile(`(?<=(fc2|FC2|ppv|PPV)-)[0-9]{6,7}`, 0)
@@ -25,7 +25,8 @@ func GetQuery(name string) (query string, scrapers []Scraper) {
 
 	switch {
 	case isSF:
-		query = name
+		match, _ := typeSyndrome.FindStringMatch(name)
+		query = match.String()
 		scrapers = append(scrapers, &GyuttoScraper{})
 	case isHeyzo:
 		match, _ := typeHeyzo.FindStringMatch(name)

@@ -3,8 +3,11 @@ package scraper
 import (
 	"better-av-tool/pkg/archive"
 	myclient "better-av-tool/pkg/client"
-
+	"bytes"
 	"fmt"
+	"golang.org/x/text/encoding/japanese"
+	"golang.org/x/text/transform"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -102,8 +105,22 @@ func (s *DefaultScraper) GetDocFromURL(u string) (err error) {
 		return err
 	}
 
-	utfBody, _ := myclient.DecodeHTMLBody(res.Body, "")
-	s.doc, err = goquery.NewDocumentFromReader(utfBody)
+	bodyBytes, _ := ioutil.ReadAll(res.Body)
+	defer res.Body.Close()
+
+	r, name, certain, err := myclient.ToUtf8Encoding(ioutil.NopCloser(bytes.NewBuffer(bodyBytes)))
+	if err != nil {
+		return err
+	}
+	log.Infof("detect content %s %s", name, certain)
+	switch name {
+	case "utf-8":
+		s.doc, err = goquery.NewDocumentFromReader(r)
+	default:
+		reader := transform.NewReader(ioutil.NopCloser(bytes.NewBuffer(bodyBytes)), japanese.EUCJP.NewDecoder())
+		s.doc, err = goquery.NewDocumentFromReader(reader) //
+	}
+
 	if err != nil {
 		return err
 	}
