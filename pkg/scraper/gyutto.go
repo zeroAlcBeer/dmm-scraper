@@ -1,7 +1,6 @@
 package scraper
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -11,7 +10,7 @@ import (
 )
 
 const (
-	gyuttoSearchUrl = "http://gyutto.com/search/search_list.php?category_id=10&mode=search&sub_category_id=21&search_keyword=%s"
+	gyuttoItemUrl = "http://gyutto.com/i/%s"
 )
 
 type GyuttoScraper struct {
@@ -23,28 +22,14 @@ func (s *GyuttoScraper) GetType() string {
 }
 
 func (s *GyuttoScraper) FetchDoc(query string) (err error) {
-	u := fmt.Sprintf(gyuttoSearchUrl, url.QueryEscape(query))
+	u := fmt.Sprintf(gyuttoItemUrl, query)
+
 	err = s.GetDocFromURL(u)
 	if err != nil {
 		return err
 	}
+	s.doc.Url, err = url.Parse(u)
 
-	var hrefs []string
-	s.doc.Find(".ListBox li").Each(func(i int, se *goquery.Selection) {
-		href, _ := se.Find(".DefiPhotoName a").Attr("href")
-		hrefs = append(hrefs, href)
-	})
-	if len(hrefs) == 0 {
-		return errors.New("record not found")
-	}
-
-	err = s.GetDocFromURL(hrefs[0])
-	if err != nil {
-		return err
-	}
-	s.doc.Url, err = url.Parse(hrefs[0])
-
-	//utfDetailBody, _ := DecodeHTMLBody(res.Body, "Shift_JIS")
 	return err
 }
 
@@ -117,7 +102,8 @@ func (s *GyuttoScraper) GetPremiered() (rel string) {
 		return ""
 	}
 
-	rel = strings.TrimSpace(s.doc.Find(".BasicInfo").Eq(4).Find("dd").Text())
+	rel = strings.TrimSpace(s.doc.Find(".BasicInfo").Text())
+	rel = regexp.MustCompile(`\d{4}年\d{2}月\d{2}日`).FindString(rel)
 	rel = strings.Replace(rel, "年", "-", 1)
 	rel = strings.Replace(rel, "月", "-", 1)
 	rel = strings.Replace(rel, "日", "", 1)

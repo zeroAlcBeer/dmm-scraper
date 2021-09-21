@@ -1,8 +1,8 @@
-GOBUILD=CGO_ENABLED=0 go build -trimpath -ldflags '-w -s'  -o
+GOBUILD=go build -trimpath -ldflags '-w -s'  -o
 BIN=bin/better-av-tool
 BIN2=bin/better-av-tool.exe
 SOURCE=.
-VERSION=1.3.3
+VERSION=1.3.4
 
 docker:
 	$(GOBUILD) $(BIN) $(SOURCE)
@@ -18,4 +18,8 @@ m1:
 	GOOS=darwin GOARCH=arm64 $(GOBUILD) $(BIN) $(SOURCE)
 	cp config.toml bin/
 	zip bin/better-av-tool-darwin-arm64-v$(VERSION).zip $(BIN) bin/config.toml
+linux:
+	GOOS=linux GOARCH=arm64 $(GOBUILD) $(BIN) $(SOURCE)
+	cp config.toml bin/
+	zip bin/better-av-tool-linux-arm64-v$(VERSION).zip $(BIN) bin/config.toml
 

@@ -125,9 +125,9 @@ func main() {
 					break
 				}
 
-				newPath := path.Join(outputPath, num+filepath.Ext(f.Name()))
-				log.Infof("%s moving video file: %s", s.GetType(), newPath)
-				err = os.Rename(f.Name(), newPath)
+				log.Infof("%s moving video file to: %s", s.GetType(), outputPath)
+				// if file exist no overwrite
+				err = MoveFile(f.Name(), outputPath, num, 0)
 				if err != nil {
 					log.Error(err)
 				}
@@ -135,4 +135,29 @@ func main() {
 			}
 		}
 	}
+}
+
+func MoveFile(oldPath, outputPath, num string, index int) error {
+	var filename string
+	if _, err := os.Stat(oldPath); os.IsNotExist(err) {
+		return err
+	}
+
+	newPath := path.Join(outputPath, num+filepath.Ext(oldPath))
+	if index != 0 {
+		filename = fmt.Sprintf("%s-pt%d%s", num, index, filepath.Ext(oldPath))
+	} else {
+		filename = fmt.Sprintf("%s%s", num, filepath.Ext(oldPath))
+	}
+	newPath = path.Join(outputPath, filename)
+	if _, err := os.Stat(newPath); err == nil {
+		index += 1
+		//if index == 1 {
+		//	filename = fmt.Sprintf("%s-pt%d%s", num, index, filepath.Ext(oldPath))
+		//	_ = os.Rename(newPath, path.Join(outputPath, filename))
+		//	index += 1
+		//}
+		return MoveFile(oldPath, outputPath, num, index)
+	}
+	return os.Rename(oldPath, newPath)
 }

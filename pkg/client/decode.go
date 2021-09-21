@@ -2,34 +2,35 @@ package client
 
 import (
 	"bufio"
-	"io"
-
+	"bytes"
 	"golang.org/x/net/html/charset"
-	"golang.org/x/text/encoding/htmlindex"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/transform"
+	"io"
+	"io/ioutil"
 )
 
-func detectContentCharset(body io.Reader) string {
-	r := bufio.NewReader(body)
-	if data, err := r.Peek(1024); err == nil {
-		if _, name, ok := charset.DetermineEncoding(data, ""); ok {
-			return name
-		}
+func ToUtf8Encoding(body io.Reader) (r io.Reader, name string, certain bool, err error) {
+
+	b, err := ioutil.ReadAll(body)
+	if err != nil {
+		return
 	}
-	return "utf-8"
+	e, name, certain, err := DetermineEncodingFromReader(bytes.NewReader(b))
+	if err != nil {
+		return
+	}
+
+	r = transform.NewReader(bytes.NewReader(b), e.NewDecoder())
+	return
 }
 
-// DecodeHTMLBody returns an decoding reader of the html Body for the specified `charset`
-// If `charset` is empty, DecodeHTMLBody tries to guess the encoding from the content
-func DecodeHTMLBody(body io.Reader, charset string) (io.Reader, error) {
-	if charset == "" {
-		charset = detectContentCharset(body)
-	}
-	e, err := htmlindex.Get(charset)
+func DetermineEncodingFromReader(r io.Reader) (e encoding.Encoding, name string, certain bool, err error) {
+	b, err := bufio.NewReader(r).Peek(1024)
 	if err != nil {
-		return nil, err
+		return
 	}
-	if name, _ := htmlindex.Name(e); name != "utf-8" {
-		body = e.NewDecoder().Reader(body)
-	}
-	return body, nil
+
+	e, name, certain = charset.DetermineEncoding(b, "")
+	return
 }
