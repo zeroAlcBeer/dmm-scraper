@@ -57,6 +57,7 @@ enable = true
 
 ## Changelog
 
+*    **21 Sep 2021 (v1.3.4)** : 修复多个分片重命名覆盖问题
 *    **5 Aug 2021 (v1.3.3)** : 修复标题番号缺失问题；重构 Scraper 包；改良输出日志
 *    **2 Aug 2021 (v1.3.1)** : 修复 mgstage 查询失败问题；替换（logrus=>golog）
 *    **30 Jul 2021 (v1.3.0)** : 修复切封面方向；由于识别日文不稳定不再支持 Sx Syndrome 刮削
@@ -70,4 +71,3 @@ enable = true
 *    **10 Mar 2020 (v0.9.0)** : 增加 DMM 的搜索类型 `digital/videoa`
 *    **14 Feb 2020 (v0.8.1)** : 修复解析发片日期的bug
 *    **17 Jan 2020 (v0.8.0)** : 增加 Heyzo 刮削器
-
