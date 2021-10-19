@@ -21,7 +21,7 @@
 [output]
 # 支持输出项目 {year} {maker} {num} {actor}
 # actor按第一位输出
-path = 'output/{year}/{actor}'
+path = 'output/({year}){num}'
 
 [proxy]
 ## proxy [socks5://][127.0.0.1:]<1-65535>; 代理
@@ -33,11 +33,12 @@ enable = true
 
 ## 支持来源
 
-- 通用番号（xxx-000）依次查询 DMM，Fanza，MGStage
+- 通用番号（xxx-000）依次查询 MGStage、Fanza、DMM
 - 支持 DMM 自有影片特征番号（xxx00000）
 - 支持 MGStage 部分特征番号（000xxx-000）
 - 支持 FC2 特征番号（fc2-000000/fc2-ppv-000000），并可查询部分已下架影片（通过 WebArchive 二次查询）
 - 支持 Heyzo 特征番号
+- 支持 VR 特征番号查询、大部分动画番号（GLOD，ACRN，JDXA）
 - <del>支持 一些自制影片（S*x Friend/S*x Syndrome)</del>
 
 ## 影片文件
@@ -51,15 +52,16 @@ enable = true
 
 ## 封面下载
 
-- dmm 来源自动下载并切封面
+- DMM 来源自动下载并切封面
     - (新)修复了切图方向，改为从右边切
-- fc2 为了清晰度默认抓取内容的第一张图
+- FC2 为了清晰度默认抓取内容的第一张图
 
 ## Changelog
 
+*    **20 Oct 2021 (v1.3.5)** : 支持 FanzaVR 刮削器
 *    **21 Sep 2021 (v1.3.4)** : 修复多个分片重命名覆盖问题
 *    **5 Aug 2021 (v1.3.3)** : 修复标题番号缺失问题；重构 Scraper 包；改良输出日志
-*    **2 Aug 2021 (v1.3.1)** : 修复 mgstage 查询失败问题；替换（logrus=>golog）
+*    **2 Aug 2021 (v1.3.1)** : 修复 MGStage 查询失败问题；替换（logrus=>golog）
 *    **30 Jul 2021 (v1.3.0)** : 修复切封面方向；由于识别日文不稳定不再支持 Sx Syndrome 刮削
 *    **5 Mar 2021 (v1.2.1)** : 重构包；替换多个基础库（grab=>req, cutter=>imaging）
 *    **7 Aug 2020 (v1.1.0)** : 标题格式正规化为大写番号，便于 emby 搜索；提高 DMM 多个搜索结果时正确率
