@@ -127,7 +127,7 @@ func main() {
 
 				log.Infof("%s moving video file to: %s", s.GetType(), outputPath)
 				// if file exist no overwrite
-				err = MoveFile(f.Name(), outputPath, num, 0)
+				err = MoveFile(f.Name(), outputPath, num, 1)
 				if err != nil {
 					log.Error(err)
 				}
@@ -143,20 +143,14 @@ func MoveFile(oldPath, outputPath, num string, index int) error {
 		return err
 	}
 
-	newPath := path.Join(outputPath, num+filepath.Ext(oldPath))
-	if index != 0 {
-		filename = fmt.Sprintf("%s-pt%d%s", num, index, filepath.Ext(oldPath))
+	if index != 1 {
+		filename = fmt.Sprintf("%s-cd%d%s", num, index, filepath.Ext(oldPath))
 	} else {
 		filename = fmt.Sprintf("%s%s", num, filepath.Ext(oldPath))
 	}
-	newPath = path.Join(outputPath, filename)
+	newPath := path.Join(outputPath, filename)
 	if _, err := os.Stat(newPath); err == nil {
 		index += 1
-		//if index == 1 {
-		//	filename = fmt.Sprintf("%s-pt%d%s", num, index, filepath.Ext(oldPath))
-		//	_ = os.Rename(newPath, path.Join(outputPath, filename))
-		//	index += 1
-		//}
 		return MoveFile(oldPath, outputPath, num, index)
 	}
 	return os.Rename(oldPath, newPath)

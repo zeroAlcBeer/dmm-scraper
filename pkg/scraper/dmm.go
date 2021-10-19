@@ -68,15 +68,16 @@ func (s *DMMScraper) GetPlot() string {
 	if s.doc == nil {
 		return ""
 	}
-	tempDoc := s.doc.Find("p[class=mg-b20]")
-	return strings.TrimSpace(tempDoc.Children().Remove().End().Text())
+	val, _ := s.doc.Find("meta[property=\"og:description\"]").Attr("content")
+	return val
 }
 
 func (s *DMMScraper) GetTitle() string {
 	if s.doc == nil {
 		return ""
 	}
-	return s.doc.Find("#title").Text()
+	val, _ := s.doc.Find("meta[property=\"og:title\"]").Attr("content")
+	return val
 }
 
 func (s *DMMScraper) GetDirector() string {
@@ -153,19 +154,8 @@ func (s *DMMScraper) GetCover() string {
 	if s.doc == nil {
 		return ""
 	}
-	img, _ := s.doc.Find("#sample-video img").First().Attr("src")
-	//if strings.Contains(img, "web.archive.org") {
-	//	img = fmt.Sprintf("http://pics.dmm.co.jp/digital/video/%s/%spl.jpg", s.GetNumber(), s.GetNumber())
-	//}
-	if strings.Contains(img, "ps.jpg") {
-		img = strings.Replace(img, "ps.jpg", "pl.jpg", 1)
-	}
-	//
-	//if s.isArchive {
-	//	img = img[strings.LastIndex(img, "http"):]
-	//	log.Info(img)
-	//}
-	return img
+	img, _ := s.doc.Find("meta[property=\"og:image\"]").Attr("content")
+	return strings.Replace(img, "ps.jpg", "pl.jpg", 1)
 }
 
 func (s *DMMScraper) GetPremiered() (rel string) {

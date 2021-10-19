@@ -5,11 +5,12 @@ import (
 	myclient "better-av-tool/pkg/client"
 	"bytes"
 	"fmt"
-	"golang.org/x/text/encoding/japanese"
-	"golang.org/x/text/transform"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"golang.org/x/text/encoding/japanese"
+	"golang.org/x/text/transform"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -112,7 +113,7 @@ func (s *DefaultScraper) GetDocFromURL(u string) (err error) {
 	if err != nil {
 		return err
 	}
-	log.Infof("detect content %s %s", name, certain)
+	log.Infof("detect content %s %v", name, certain)
 	switch name {
 	case "utf-8":
 		s.doc, err = goquery.NewDocumentFromReader(r)
@@ -153,7 +154,7 @@ func GetOutputPath(s Scraper, conf string) string {
 		p = strings.Replace(p, "{actor}", "", 1)
 	}
 	p = strings.Replace(p, "{maker}", s.GetMaker(), 1)
-	p = strings.Replace(p, "{num}", s.GetNumber(), 1)
+	p = strings.Replace(p, "{num}", s.GetFormatNumber(), 1)
 
 	return strings.Replace(p, "//", "/", -1)
 }

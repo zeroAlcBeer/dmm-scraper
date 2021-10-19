@@ -1,23 +1,21 @@
 package scraper
 
-import (
-	"testing"
-)
+import "testing"
 
-func TestDMMScraper_FetchDoc(t *testing.T) {
+func TestFanzaScraper_FetchDoc(t *testing.T) {
 	BeforeTest()
 	tests := []testCase{
 		{
 			name: "fetchDoc expects no error",
 			args: args{
-				query: "gne-218",
+				query: "196glod00152",
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &DMMScraper{}
+			s := &FanzaScraper{}
 			if err := s.FetchDoc(tt.args.query); (err != nil) != tt.wantErr {
 				t.Errorf("FetchDoc() error = %v, wantErr %v", err, tt.wantErr)
 			}

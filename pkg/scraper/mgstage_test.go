@@ -18,15 +18,18 @@ func TestMGStageScraper_FetchDoc(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, ok := mgsTests[tt.args.query]; !ok {
-				mgsTests[tt.args.query] = &MGStageScraper{}
-			}
-			if err := mgsTests[tt.args.query].FetchDoc(tt.args.query); (err != nil) != tt.wantErr {
+			s := &MGStageScraper{}
+			if err := s.FetchDoc(tt.args.query); (err != nil) != tt.wantErr {
 				t.Errorf("FetchDoc() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if got := mgsTests[tt.args.query].GetNumber(); got != tt.want {
-				t.Errorf("GetNumber() = %v, want %v", got, tt.want)
-			}
+			got := s.GetNumber()
+			t.Logf("GetNumber() = %v", got)
+			got = s.GetPlot()
+			t.Logf("GetPlot() = %v", got)
+			got = s.GetTitle()
+			t.Logf("GetTitle() = %v", got)
+			got = s.GetCover()
+			t.Logf("GetCover() = %v", got)
 		})
 	}
 }

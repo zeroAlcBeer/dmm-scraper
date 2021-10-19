@@ -20,7 +20,9 @@ func GetQuery(name string) (query string, scrapers []Scraper) {
 	isFC2, _ := typeFC2.MatchString(name)
 	typeMGStage, _ := regexp2.Compile(`([0-9]{3,4}[a-zA-Z]{2,5})-[0-9]{3,4}`, 0)
 	isMGStage, _ := typeMGStage.MatchString(name)
-	typeDMM, _ := regexp2.Compile(`[a-zA-Z]{2,5}(-|)[0-9]{3,5}`, 0)
+	typeVR, _ := regexp2.Compile(`(VR|vr)`, 0)
+	isVR, _ := typeVR.MatchString(name)
+	typeDMM, _ := regexp2.Compile(`[a-zA-Z]{2,5}(-|)[0-9]{3,6}`, regexp2.RightToLeft)
 	isDMM, _ := typeDMM.MatchString(name)
 
 	switch {
@@ -41,10 +43,14 @@ func GetQuery(name string) (query string, scrapers []Scraper) {
 		match, _ := typeMGStage.FindStringMatch(name)
 		query = match.String()
 		scrapers = append(scrapers, &MGStageScraper{})
+	case isVR:
+		match, _ := typeDMM.FindStringMatch(name)
+		query = match.String()
+		scrapers = append(scrapers, &FanzaVRScraper{})
 	case isDMM:
 		match, _ := typeDMM.FindStringMatch(name)
 		query = match.String()
-		scrapers = append(scrapers, &DMMScraper{}, &FanzaScraper{}, &MGStageScraper{})
+		scrapers = append(scrapers, &MGStageScraper{}, &FanzaScraper{}, &DMMScraper{})
 	}
 
 	return
