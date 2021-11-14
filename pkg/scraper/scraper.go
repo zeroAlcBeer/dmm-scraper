@@ -4,6 +4,7 @@ import (
 	myclient "better-av-tool/pkg/client"
 	"better-av-tool/pkg/config"
 	"better-av-tool/pkg/logger"
+	"better-av-tool/third_party/dmm-go-sdk/api"
 )
 
 // Scraper is interface
@@ -29,18 +30,24 @@ type Scraper interface {
 }
 
 var (
-	client myclient.Client
-	log    logger.Logger
+	client            myclient.Client
+	log               logger.Logger
+	dmmProductService *api.ProductService
+	needCut           bool
 )
 
 // Setup ...
-func Setup(p config.Proxy) {
+func Setup(conf *config.Configs) {
 	log = logger.New()
 	client = myclient.New()
-	if p.Enable {
-		err := client.SetProxyUrl(p.Socket)
+	if conf.Proxy.Enable {
+		err := client.SetProxyUrl(conf.Proxy.Socket)
 		if err != nil {
 			log.Errorf("Error parse proxy url, %s, proxy disabled", err)
 		}
 	}
+	if conf.DMMApi.ApiId != "" && conf.DMMApi.AffiliateId != "" {
+		dmmProductService = api.NewProductService(conf.DMMApi.AffiliateId, conf.DMMApi.ApiId)
+	}
+	needCut = conf.Output.NeedCut
 }

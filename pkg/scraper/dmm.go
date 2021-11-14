@@ -184,7 +184,7 @@ func (s *DMMScraper) GetSeries() string {
 }
 
 func (s *DMMScraper) NeedCut() bool {
-	return true
+	return needCut
 }
 
 func getDmmTableValue(key string, doc *goquery.Document) (val string) {

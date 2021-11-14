@@ -8,36 +8,37 @@ import (
 )
 
 type EmbyMovie struct {
-	XMLName   xml.Name `xml:"movie"`
-	Text      string   `xml:",chardata"`
-	Plot      string   `xml:"plot"`
-	Outline   string   `xml:"outline"`
-	Title     string   `xml:"title"`
-	Director  string   `xml:"director"`
-	Year      string   `xml:"year"`
-	Premiered string   `xml:"premiered"`
-	//ReleaseDate string   `xml:"releasedate"`
-	Runtime string           `xml:"runtime"`
-	Genre   []string         `xml:"genre"`
-	Studio  string           `xml:"studio"`
-	Tag     []string         `xml:"tag"`
-	Actor   []EmbyMovieActor `xml:"actor"`
-	Poster  string           `xml:"poster"`
-	Fanart  []EmbyMovieThumb `xml:"fanart"`
-	Label   string           `xml:"label"`
-	Num     string           `xml:"num"`
-	Cover   string           `xml:"cover"`
-	Website string           `xml:"website"`
+	XMLName   xml.Name         `xml:"movie"`
+	Plot      string           `xml:"plot"`
+	Outline   string           `xml:"outline"`
+	Title     string           `xml:"title"`
+	Director  string           `xml:"director"`
+	Year      string           `xml:"year"`
+	Premiered string           `xml:"premiered"`
+	Runtime   string           `xml:"runtime"`
+	Genre     []string         `xml:"genre"`
+	Studio    string           `xml:"studio"`
+	Tag       []string         `xml:"tag"`
+	Actor     []EmbyMovieActor `xml:"actor"`
+	Label     string           `xml:"label"`
+	Num       string           `xml:"num"`
+	Cover     string           `xml:"cover"`
+	Website   string           `xml:"website"`
+	// Ratings   *EmbyMovieRatings `xml:"ratings,omitempty"`
 }
 
 type EmbyMovieActor struct {
-	Text string `xml:",chardata"`
 	Name string `xml:"name"`
 }
+type EmbyMovieRatings struct {
+	Rating []EmbyMovieRating `xml:"rating"`
+}
 
-type EmbyMovieThumb struct {
-	Text  string `xml:",chardata"`
-	Thumb string `xml:"thumb"`
+type EmbyMovieRating struct {
+	Name  string `xml:"name,attr"`
+	Max   string `xml:"max,attr"`
+	Value string `xml:"value"`
+	Votes string `xml:"votes"`
 }
 
 func (m *EmbyMovie) ToXML() ([]byte, error) {
@@ -57,10 +58,10 @@ func (m *EmbyMovie) Save(filename string) error {
 	return os.WriteFile(filename, b, 0644)
 }
 
-func (m *EmbyMovie) SetPoster(filename string) {
-	m.Fanart = []EmbyMovieThumb{{Thumb: filename}}
-	m.Poster = filename
-}
+// func (m *EmbyMovie) SetPoster(filename string) {
+// 	m.Fanart = []EmbyMovieThumb{{Thumb: filename}}
+// 	m.Poster = filename
+// }
 
 func (m *EmbyMovie) SetTitle(formatNum string) {
 	m.Title = fmt.Sprintf("%s %s", formatNum, m.Title)
@@ -74,6 +75,15 @@ func newEmbyMovieActors(names []string) []EmbyMovieActor {
 	return actors
 }
 
+// func newEmbyRatings(name, max, value, votes string) EmbyMovieRatings {
+// 	return EmbyMovieRatings{[]EmbyMovieRating{{
+// 		Name:  name,
+// 		Max:   max,
+// 		Value: value,
+// 		Votes: votes,
+// 	}}}
+// }
+
 // NewMovieNfo ...
 func NewMovieNfo(s scraper.Scraper) MovieNfo {
 	return &EmbyMovie{
@@ -83,15 +93,13 @@ func NewMovieNfo(s scraper.Scraper) MovieNfo {
 		Year:      s.GetYear(),
 		Premiered: s.GetPremiered(),
 		Runtime:   s.GetRuntime(),
-		Genre:     append(s.GetTags(), s.GetSeries(), s.GetLabel()),
-		Tag:       append(s.GetTags(), s.GetSeries(), s.GetLabel()),
+		Genre:     s.GetTags(),
+		Tag:       append(s.GetTags(), s.GetSeries(), s.GetLabel(), s.GetMaker(), s.GetDirector()),
 		Studio:    s.GetMaker(),
 		Label:     s.GetLabel(),
 		Actor:     newEmbyMovieActors(s.GetActors()),
 		Cover:     s.GetCover(),
 		Num:       s.GetNumber(),
 		Website:   s.GetWebsite(),
-		//Fanart:    []EmbyMovieThumb{{Thumb: cover}},
-		//Poster:    "",
 	}
 }

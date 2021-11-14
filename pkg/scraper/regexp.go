@@ -11,23 +11,22 @@ import (
 )
 
 func GetQuery(name string) (query string, scrapers []Scraper) {
-	//typeSyndrome, _ := regexp.Compile(`Sex\sSyndrome`)
-	typeSyndrome, _ := regexp2.Compile(`item[0-9]{6,7}`, 0)
-	isSF, _ := typeSyndrome.MatchString(name)
+	typeGyutto, _ := regexp2.Compile(`item[0-9]{6,7}`, 0)
+	isGyutto, _ := typeGyutto.MatchString(name)
 	typeHeyzo, _ := regexp2.Compile(`(heyzo|HEYZO)-[0-9]{4}`, 0)
 	isHeyzo, _ := typeHeyzo.MatchString(name)
 	typeFC2, _ := regexp2.Compile(`(?<=(fc2|FC2|ppv|PPV)-)[0-9]{6,7}`, 0)
 	isFC2, _ := typeFC2.MatchString(name)
-	typeMGStage, _ := regexp2.Compile(`([0-9]{3,4}[a-zA-Z]{2,5})-[0-9]{3,4}`, 0)
+	typeMGStage, _ := regexp2.Compile(`([0-9]{3,4}[a-zA-Z]{2,6})-[0-9]{3,4}`, 0)
 	isMGStage, _ := typeMGStage.MatchString(name)
-	typeVR, _ := regexp2.Compile(`(VR|vr)`, 0)
-	isVR, _ := typeVR.MatchString(name)
+	// typeAnime, _ := regexp2.Compile(`(GLOD|JDXA|MJAD|ACRN|ORORE|DPLT)(-|)[0-9]{3,6}`, regexp2.RightToLeft)
+	// isAnime, _ := typeDMM.MatchString(name)
 	typeDMM, _ := regexp2.Compile(`[a-zA-Z]{2,5}(-|)[0-9]{3,6}`, regexp2.RightToLeft)
 	isDMM, _ := typeDMM.MatchString(name)
 
 	switch {
-	case isSF:
-		match, _ := typeSyndrome.FindStringMatch(name)
+	case isGyutto:
+		match, _ := typeGyutto.FindStringMatch(name)
 		query = match.String()
 		scrapers = append(scrapers, &GyuttoScraper{})
 	case isHeyzo:
@@ -37,20 +36,19 @@ func GetQuery(name string) (query string, scrapers []Scraper) {
 	case isFC2:
 		match, _ := typeFC2.FindStringMatch(name)
 		query = match.String()
-		//query = regexp.MustCompile(`[0-9]{6,7}`).FindString(name)
 		scrapers = append(scrapers, &Fc2Scraper{})
 	case isMGStage:
 		match, _ := typeMGStage.FindStringMatch(name)
 		query = match.String()
 		scrapers = append(scrapers, &MGStageScraper{})
-	case isVR:
-		match, _ := typeDMM.FindStringMatch(name)
-		query = match.String()
-		scrapers = append(scrapers, &FanzaVRScraper{})
 	case isDMM:
 		match, _ := typeDMM.FindStringMatch(name)
 		query = match.String()
-		scrapers = append(scrapers, &MGStageScraper{}, &FanzaScraper{}, &DMMScraper{})
+		if dmmProductService != nil {
+			scrapers = append(scrapers, &DMMApiScraper{}, &DMMApiDigitalScraper{})
+		} else {
+			scrapers = append(scrapers, &DMMScraper{}, &FanzaScraper{})
+		}
 	}
 
 	return

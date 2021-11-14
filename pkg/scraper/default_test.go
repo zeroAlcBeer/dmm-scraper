@@ -17,8 +17,9 @@ type testCase struct {
 }
 
 func BeforeTest() {
-	Setup(config.Proxy{
-		Enable: true,
-		Socket: "socks5://192.168.0.110:7891",
-	})
+	c, err := config.NewLoader().LoadFile("../../config")
+	if err != nil {
+		log.Fatalf("Error reading config file, %s", err)
+	}
+	Setup(c)
 }

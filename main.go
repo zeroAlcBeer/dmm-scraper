@@ -48,7 +48,7 @@ func main() {
 		conf = config.Default()
 	}
 
-	scraper.Setup(conf.Proxy)
+	scraper.Setup(conf)
 
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
@@ -98,7 +98,7 @@ func main() {
 				// build nfo
 				movieNfo := metadata.NewMovieNfo(s)
 				poster := fmt.Sprintf("%s.jpg", num)
-				movieNfo.SetPoster(poster)
+				// movieNfo.SetPoster(poster)
 				movieNfo.SetTitle(num)
 
 				posterPath := path.Join(outputPath, poster)

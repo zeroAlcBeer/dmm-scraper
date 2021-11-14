@@ -3,11 +3,16 @@
 [output]
 # 支持输出项目 {year} {maker} {num} {actor}
 # actor按第一位输出
-path = 'output/{year}'
+path = 'output/{year}/{num}'
+needCut = true
 
 [proxy]
 ## proxy [socks5://][127.0.0.1:]<1-65535>; 代理
 ## 协议：socks4, socks5, http, https
-socket = "socks5://127.0.0.1:7891"
+socket = "socks5://192.168.0.110:7891"
 ## 设置是否启用代理
-enable = false
+enable = true
+
+[DMMApi]
+apiId = ""
+affiliateId = ""

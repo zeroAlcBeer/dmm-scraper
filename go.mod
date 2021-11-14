@@ -8,6 +8,7 @@ require (
 	github.com/dlclark/regexp2 v1.4.0
 	github.com/imroc/req v0.3.0
 	github.com/kataras/golog v0.1.7
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.4.0 // indirect
