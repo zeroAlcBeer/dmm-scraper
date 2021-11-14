@@ -93,7 +93,7 @@ func (DefaultScraper) GetType() string {
 }
 
 func (DefaultScraper) NeedCut() bool {
-	return false
+	return needCut
 }
 
 func (s *DefaultScraper) GetDocFromURL(u string) (err error) {

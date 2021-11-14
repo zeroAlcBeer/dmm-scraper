@@ -9,6 +9,6 @@ type Metadata interface {
 // MovieNfo interface
 type MovieNfo interface {
 	Metadata
-	SetPoster(filename string)
+	// SetPoster(filename string)
 	SetTitle(num string)
 }

@@ -28,6 +28,18 @@ func (s *GyuttoScraper) FetchDoc(query string) (err error) {
 	if err != nil {
 		return err
 	}
+
+	if s.doc.Find(".BasicInfo").Length() == 0 {
+		u, err = s.GetAvailableUrl(u)
+		if err != nil {
+			return err
+		}
+		s.isArchive = true
+		err = s.GetDocFromURL(u)
+		if err != nil {
+			return err
+		}
+	}
 	s.doc.Url, err = url.Parse(u)
 
 	return err
