@@ -139,7 +139,7 @@ func (s *MGStageScraper) GetSeries() string {
 }
 
 func (s *MGStageScraper) GetFormatNumber() string {
-	typeMGStage, _ := regexp2.Compile(`([0-9]{3,4}|)[a-zA-Z]{2,5}-[0-9]{3,5}`, 0)
+	typeMGStage, _ := regexp2.Compile(`([0-9]{3,4}|)[a-zA-Z]{2,6}-[0-9]{3,5}`, 0)
 	match, _ := typeMGStage.FindStringMatch(s.GetNumber())
 	return strings.ToUpper(match.String())
 }
