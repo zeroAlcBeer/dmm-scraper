@@ -1,4 +1,4 @@
-module better-av-tool
+module dmm-scraper
 
 go 1.12
 
