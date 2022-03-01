@@ -1,8 +1,8 @@
-# better-av-tool
+# dmm-scraper
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/CheerChen/better-av-tool)](https://goreportcard.com/report/github.com/CheerChen/better-av-tool)
-[![Downloads](https://img.shields.io/github/downloads/CheerChen/better-av-tool/total.svg)](https://github.com/CheerChen/better-av-tool/releases)
-[![Release](https://img.shields.io/github/release/CheerChen/better-av-tool.svg?label=Release)](https://github.com/CheerChen/better-av-tool/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/CheerChen/dmm-scraper)](https://goreportcard.com/report/github.com/CheerChen/dmm-scraper)
+[![Downloads](https://img.shields.io/github/downloads/CheerChen/dmm-scraper/total.svg)](https://github.com/CheerChen/dmm-scraper/releases)
+[![Release](https://img.shields.io/github/release/CheerChen/dmm-scraper.svg?label=Release)](https://github.com/CheerChen/dmm-scraper/releases)
 
 ## 特性
 
