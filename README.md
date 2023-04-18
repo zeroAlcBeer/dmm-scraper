@@ -11,17 +11,6 @@
 - 优化了生成的 nfo 部分标签以更好适配 emby
 - 可查询部分已下架影片（仅限FC2，Gyutto）
 
-## 应用场景
-
-在使用之前请对照以下场景：
-
-- 我有大量已下载的命名混乱的电影文件，我**不在乎源文件的命名和目录**，我只想要在 Emby 中正常显示信息和封面
-	-  请使用 [Emby.Plugins.JavScraper](https://github.com/JavScraper/Emby.Plugins.JavScraper)
-- 我有大量已下载的命名混乱的电影文件，我**需要一次性批量采集，修改命名并且移动到指定目录**，我**无法在 Emby 中正常使用插件**
-	- 请使用 [dmm-scraper](https://github.com/CheerChen/dmm-scraper/releases)
-- 我希望监控 NAS 的下载，我需要下载好的电影文件**自动采集信息，修改命名并且移动到指定目录**
-	- 请使用 [dmm-scraper-docker](https://github.com/CheerChen/dmm-scraper-docker)
-
 ## 基本用法
 
 - 移动程序到影片目录执行，程序会扫描查询*同目录*影片并生成影片的nfo文件以及封面
