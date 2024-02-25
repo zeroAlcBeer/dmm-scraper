@@ -1,18 +1,18 @@
 package scraper
 
 import (
-	"better-av-tool/pkg/archive"
-	myclient "better-av-tool/pkg/client"
 	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
-	"golang.org/x/text/encoding/japanese"
-	"golang.org/x/text/transform"
+	"dmm-scraper/pkg/archive"
+	myclient "dmm-scraper/pkg/client"
 
 	"github.com/PuerkitoBio/goquery"
+	"golang.org/x/text/encoding/japanese"
+	"golang.org/x/text/transform"
 )
 
 type DefaultScraper struct {

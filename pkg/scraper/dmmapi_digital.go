@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"better-av-tool/third_party/dmm-go-sdk/api"
+	"dmm-scraper/third_party/dmm-go-sdk/api"
 )
 
 type DMMApiDigitalScraper struct {

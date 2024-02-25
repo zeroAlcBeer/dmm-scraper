@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"better-av-tool/third_party/dmm-go-sdk/api"
+	"dmm-scraper/third_party/dmm-go-sdk/api"
 )
 
 type DMMApiScraper struct {
@@ -22,7 +22,6 @@ func (s *DMMApiScraper) GetType() string {
 // ...
 func (s *DMMApiScraper) FetchDoc(query string) (err error) {
 	query = strings.Replace(query, "-", "", 1)
-
 
 	dmmProductService.SetSite(api.SiteAdult)
 	dmmProductService.SetService("mono")

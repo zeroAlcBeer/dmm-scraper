@@ -1,7 +1,7 @@
 package scraper
 
 import (
-	"better-av-tool/pkg/config"
+	"dmm-scraper/pkg/config"
 )
 
 type args struct {

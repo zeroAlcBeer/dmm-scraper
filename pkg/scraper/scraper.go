@@ -1,10 +1,10 @@
 package scraper
 
 import (
-	myclient "better-av-tool/pkg/client"
-	"better-av-tool/pkg/config"
-	"better-av-tool/pkg/logger"
-	"better-av-tool/third_party/dmm-go-sdk/api"
+	myclient "dmm-scraper/pkg/client"
+	"dmm-scraper/pkg/config"
+	"dmm-scraper/pkg/logger"
+	"dmm-scraper/third_party/dmm-go-sdk/api"
 )
 
 // Scraper is interface

@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"better-av-tool/pkg/config"
-	"better-av-tool/pkg/img"
-	"better-av-tool/pkg/logger"
-	"better-av-tool/pkg/metadata"
-	"better-av-tool/pkg/scraper"
+	"dmm-scraper/pkg/config"
+	"dmm-scraper/pkg/img"
+	"dmm-scraper/pkg/logger"
+	"dmm-scraper/pkg/metadata"
+	"dmm-scraper/pkg/scraper"
 )
 
 var (
