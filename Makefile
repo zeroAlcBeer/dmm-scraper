@@ -2,7 +2,7 @@ GOBUILD=go build -trimpath -ldflags '-w -s'  -o
 BIN=bin/better-av-tool
 BIN2=bin/better-av-tool.exe
 SOURCE=.
-VERSION=1.4.0
+VERSION=1.5.3
 
 docker:
 	$(GOBUILD) $(BIN) $(SOURCE)

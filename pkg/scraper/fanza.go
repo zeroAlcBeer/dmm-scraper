@@ -34,7 +34,10 @@ func (s *FanzaScraper) FetchDoc(query string) (err error) {
 
 	// dmm 搜索页
 	if strings.Contains(query, "-") {
-		query = strings.Replace(query, "-", "00", 1)
+		strs := strings.Split(query, "-")
+		if len(strs) == 2 {
+			query = strs[0] + fmt.Sprintf("%05s", strs[1])
+		}
 	}
 	err = s.GetDocFromURL(fmt.Sprintf(dmmDigitalSearchUrl, query))
 	if err != nil {

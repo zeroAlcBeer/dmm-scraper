@@ -47,7 +47,7 @@ func GetQuery(name string) (query string, scrapers []Scraper) {
 		if dmmProductService != nil {
 			scrapers = append(scrapers, &DMMApiScraper{}, &DMMApiDigitalScraper{})
 		} else {
-			scrapers = append(scrapers, &DMMScraper{}, &FanzaScraper{})
+			scrapers = append(scrapers, &DMMScraper{}, &FanzaScraper{}, &JavCupScraper{})
 		}
 	}
 

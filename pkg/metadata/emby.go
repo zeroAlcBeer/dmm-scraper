@@ -1,10 +1,11 @@
 package metadata
 
 import (
-	"better-av-tool/pkg/scraper"
 	"encoding/xml"
 	"fmt"
 	"os"
+
+	"dmm-scraper/pkg/scraper"
 )
 
 type EmbyMovie struct {
