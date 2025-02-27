@@ -3,7 +3,7 @@ package scraper
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -106,10 +106,10 @@ func (s *DefaultScraper) GetDocFromURL(u string) (err error) {
 		return err
 	}
 
-	bodyBytes, _ := ioutil.ReadAll(res.Body)
+	bodyBytes, _ := io.ReadAll(res.Body)
 	defer res.Body.Close()
 
-	r, name, certain, err := myclient.ToUtf8Encoding(ioutil.NopCloser(bytes.NewBuffer(bodyBytes)))
+	r, name, certain, err := myclient.ToUtf8Encoding(io.NopCloser(bytes.NewBuffer(bodyBytes)))
 	if err != nil {
 		return err
 	}
@@ -117,8 +117,12 @@ func (s *DefaultScraper) GetDocFromURL(u string) (err error) {
 	switch name {
 	case "utf-8":
 		s.doc, err = goquery.NewDocumentFromReader(r)
+	case "windows-1252":
+		s.doc, err = goquery.NewDocumentFromReader(r)
+		// decoder := charmap.Windows1252.NewDecoder()
+		// s.doc, err = goquery.NewDocumentFromReader(decoder.Reader(r))
 	default:
-		reader := transform.NewReader(ioutil.NopCloser(bytes.NewBuffer(bodyBytes)), japanese.EUCJP.NewDecoder())
+		reader := transform.NewReader(io.NopCloser(bytes.NewBuffer(bodyBytes)), japanese.EUCJP.NewDecoder())
 		s.doc, err = goquery.NewDocumentFromReader(reader) //
 	}
 

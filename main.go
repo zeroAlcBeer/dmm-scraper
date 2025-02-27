@@ -62,6 +62,7 @@ func main() {
 		if !isValidVideo(ext) {
 			continue
 		}
+		log.Infof("")
 		log.Infof("Check file: %s", f.Name())
 		name := strings.TrimSuffix(f.Name(), ext)
 
@@ -69,6 +70,7 @@ func main() {
 		if query, scrapers := scraper.GetQuery(name); query != "" {
 
 			for _, s := range scrapers {
+				log.Infof("")
 				log.Infof("%s capturing query: %s", s.GetType(), query)
 
 				// fetch

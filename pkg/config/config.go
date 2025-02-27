@@ -12,17 +12,10 @@ type Proxy struct {
 	Socket string
 }
 
-// DMMApi returns the configuration of DMMApi
-type DMMApi struct {
-	ApiId       string
-	AffiliateId string
-}
-
 // Configs ...
 type Configs struct {
 	Output Output
 	Proxy  Proxy
-	DMMApi DMMApi
 }
 
 // Default ...
@@ -35,10 +28,6 @@ func Default() *Configs {
 		Proxy: Proxy{
 			Enable: false,
 			Socket: "",
-		},
-		DMMApi: DMMApi{
-			ApiId:       "",
-			AffiliateId: "",
 		},
 	}
 }

@@ -4,31 +4,25 @@ import (
 	"testing"
 )
 
-func TestFc2Scraper_FetchDoc(t *testing.T) {
+func TestAVWikiScraper_FetchDoc(t *testing.T) {
 	BeforeTest()
 	tests := []testCase{
 		{
 			name: "fetchDoc expects no error",
 			args: args{
-				query: "1027251",
+				query: "OYCVR020.VR",
 			},
 			wantErr: false,
+			want:    "OYCVR-020",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Fc2Scraper{}
+			s := &AVWikiScraper{}
 			if err := s.FetchDoc(tt.args.query); (err != nil) != tt.wantErr {
 				t.Errorf("FetchDoc() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			got := s.GetNumber()
-			t.Logf("GetNumber() = %v", got)
-			got = s.GetPlot()
-			t.Logf("GetPlot() = %v", got)
-			got = s.GetTitle()
-			t.Logf("GetTitle() = %v", got)
-			got = s.GetCover()
-			t.Logf("GetCover() = %v", got)
+			dumpS(t, s)
 		})
 	}
 }

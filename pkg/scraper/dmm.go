@@ -208,8 +208,3 @@ func getDmmTableValue(key string, doc *goquery.Document) (val string) {
 		})
 	return
 }
-
-func getDmmTableValue2(x int, doc *goquery.Document) (val string) {
-	//log.Info(doc.Find("table[class=mg-b20] td[width]").Html())
-	return doc.Find("table[class=mg-b20] td").Eq(x - 1).Text()
-}

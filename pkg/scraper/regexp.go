@@ -15,8 +15,8 @@ func GetQuery(name string) (query string, scrapers []Scraper) {
 	isGyutto, _ := typeGyutto.MatchString(name)
 	typeHeyzo, _ := regexp2.Compile(`(heyzo|HEYZO)-[0-9]{4}`, 0)
 	isHeyzo, _ := typeHeyzo.MatchString(name)
-	typeFC2, _ := regexp2.Compile(`(?<=(fc2|FC2|ppv|PPV)-)[0-9]{6,7}`, 0)
-	isFC2, _ := typeFC2.MatchString(name)
+	// typeFC2, _ := regexp2.Compile(`(?<=(fc2|FC2|ppv|PPV)-)[0-9]{6,7}`, 0)
+	// isFC2, _ := typeFC2.MatchString(name)
 	typeMGStage, _ := regexp2.Compile(`([0-9]{3,4}[a-zA-Z]{2,6})-[0-9]{3,4}`, 0)
 	isMGStage, _ := typeMGStage.MatchString(name)
 	// typeAnime, _ := regexp2.Compile(`(GLOD|JDXA|MJAD|ACRN|ORORE|DPLT)(-|)[0-9]{3,6}`, regexp2.RightToLeft)
@@ -33,10 +33,10 @@ func GetQuery(name string) (query string, scrapers []Scraper) {
 		match, _ := typeHeyzo.FindStringMatch(name)
 		query = match.String()
 		scrapers = append(scrapers, &HeyzoScraper{})
-	case isFC2:
-		match, _ := typeFC2.FindStringMatch(name)
-		query = match.String()
-		scrapers = append(scrapers, &Fc2Scraper{})
+	// case isFC2:
+	// 	match, _ := typeFC2.FindStringMatch(name)
+	// 	query = match.String()
+	// 	scrapers = append(scrapers, &Fc2Scraper{})
 	case isMGStage:
 		match, _ := typeMGStage.FindStringMatch(name)
 		query = match.String()
@@ -44,11 +44,7 @@ func GetQuery(name string) (query string, scrapers []Scraper) {
 	case isDMM:
 		match, _ := typeDMM.FindStringMatch(name)
 		query = match.String()
-		if dmmProductService != nil {
-			scrapers = append(scrapers, &DMMApiScraper{}, &DMMApiDigitalScraper{})
-		} else {
-			scrapers = append(scrapers, &DMMScraper{}, &FanzaScraper{}, &JavCupScraper{})
-		}
+		scrapers = append(scrapers, &FanzaScraper{}, &DMMScraper{}, &AVWikiScraper{})
 	}
 
 	return

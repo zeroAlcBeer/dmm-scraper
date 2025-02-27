@@ -4,7 +4,6 @@ import (
 	myclient "dmm-scraper/pkg/client"
 	"dmm-scraper/pkg/config"
 	"dmm-scraper/pkg/logger"
-	"dmm-scraper/third_party/dmm-go-sdk/api"
 )
 
 // Scraper is interface
@@ -30,10 +29,9 @@ type Scraper interface {
 }
 
 var (
-	client            myclient.Client
-	log               logger.Logger
-	dmmProductService *api.ProductService
-	needCut           bool
+	client  myclient.Client
+	log     logger.Logger
+	needCut bool
 )
 
 // Setup ...
@@ -45,9 +43,6 @@ func Setup(conf *config.Configs) {
 		if err != nil {
 			log.Errorf("Error parse proxy url, %s, proxy disabled", err)
 		}
-	}
-	if conf.DMMApi.ApiId != "" && conf.DMMApi.AffiliateId != "" {
-		dmmProductService = api.NewProductService(conf.DMMApi.AffiliateId, conf.DMMApi.ApiId)
 	}
 	needCut = conf.Output.NeedCut
 }
