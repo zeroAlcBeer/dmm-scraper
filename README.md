@@ -1,8 +1,8 @@
 # dmm-scraper
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/CheerChen/dmm-scraper)](https://goreportcard.com/report/github.com/CheerChen/dmm-scraper)
-[![Downloads](https://img.shields.io/github/downloads/CheerChen/dmm-scraper/total.svg)](https://github.com/CheerChen/dmm-scraper/releases)
-[![Release](https://img.shields.io/github/release/CheerChen/dmm-scraper.svg?label=Release)](https://github.com/CheerChen/dmm-scraper/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/zeroAlcBeer/dmm-scraper)](https://goreportcard.com/report/github.com/zeroAlcBeer/dmm-scraper)
+[![Downloads](https://img.shields.io/github/downloads/zeroAlcBeer/dmm-scraper/total.svg)](https://github.com/zeroAlcBeer/dmm-scraper/releases)
+[![Release](https://img.shields.io/github/release/zeroAlcBeer/dmm-scraper.svg?label=Release)](https://github.com/zeroAlcBeer/dmm-scraper/releases)
 
 ## 特性
 
